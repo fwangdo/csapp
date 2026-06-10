@@ -1,0 +1,21 @@
+docs/
+.DS_Store
+
+# Downloaded upstream handouts. Keep personal work in labs/<lab-name>/.
+labs/_handouts/
+
+# C build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+*.out
+*.d
+*.dSYM/
+core
+vgcore.*
+
+# Local scratch files
+tmp/
+*.log
