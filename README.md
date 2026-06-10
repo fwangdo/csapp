@@ -22,6 +22,33 @@ Install the basic compiler tools first:
 xcode-select --install
 ```
 
+On macOS, `/usr/bin/gcc` is usually Apple clang, not GNU GCC. Install GNU GCC
+with Homebrew when CS:APP material expects GCC-specific behavior:
+
+```sh
+brew install gcc
+```
+
+Homebrew installs versioned commands such as `gcc-15`, `g++-15`, and
+`gcc-ar-15`. Use those names explicitly:
+
+```sh
+gcc-15 --version
+gcc-15 -Wall -Wextra -std=c11 chapters/ch01-tour/hello.c -o /tmp/hello
+make CC=gcc-15 -C chapters/ch07-linking
+```
+
+For one shell session, this also works:
+
+```sh
+export CC=gcc-15
+make -C chapters/ch07-linking
+```
+
+Do not rely on plain `gcc` unless `gcc --version` says `gcc (Homebrew GCC ...)`.
+CS:APP labs that depend on Linux/x86-64 or ELF behavior may still need a Linux
+VM or container; Homebrew GCC only changes the compiler on macOS.
+
 Then download official self-study lab handouts:
 
 ```sh

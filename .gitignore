@@ -16,6 +16,9 @@ build/
 core
 vgcore.*
 
+# Chapter example binaries
+chapters/**/app
+
 # Local scratch files
 tmp/
 *.log
