@@ -1,6 +1,6 @@
 # Labs
 
-Official CS:APP labs should be unpacked here when I start working on them:
+Official CS:APP labs are unpacked here and ready to work on:
 
 ```text
 labs/datalab/

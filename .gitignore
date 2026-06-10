@@ -16,6 +16,10 @@ build/
 core
 vgcore.*
 
+# Official lab handout files that look like generated artifacts
+!labs/malloclab/*.o
+!labs/shlab/tshref.out
+
 # Chapter example binaries
 chapters/**/app
 
