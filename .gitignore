@@ -26,3 +26,6 @@ chapters/**/app
 # Local scratch files
 tmp/
 *.log
+
+# additional information 
+jd/
