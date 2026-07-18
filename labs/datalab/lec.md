@@ -8,11 +8,19 @@
       - Note that we the sign of E is different from sigh of the number itself( 2 ^ (-1)  vs  (-1) * 2)!
       - M is 1 + f because it is normalized format. 
   - case 2: Denormalized case. 
-    - if all of number is zero, then we would interpet it as 0. 
+    - if all numbers in "EXP" is zero, then we would interpet it as 0. 
     - M should be f itself(not add one)
     - if sign bit is zero, then it would be +0.0. if not so, it would be -0.0.
   - case 3: Special Values. 
     - all one case. it is interpreted as inf. 
     - According to sign bit, it can +inf or -inf. 
+
+
+- Rouding
+  - four methods. to even, to zero, to down, to up. 
+  - to even. near to even. (e.g., 1.5 -> 2, 2.5 -> 2). It is the most common! 
+  - to zero. to satisfy |x| <= |hat(x)|
+  - to down, x <= hat(x)
+  - to up is vice versa. 
 
 
