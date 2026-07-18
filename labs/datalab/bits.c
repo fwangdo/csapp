@@ -153,7 +153,12 @@ int bitXor(int x, int y) {
  *   Max ops: 4
  *   Rating: 1
  */
-int tmin(void) { return 2; }
+int tmin(void) {
+  // consider it is 32 bits machine.
+  // - 2 ^ 31. <-> 2^ 31 - 1  / 0 <-> 2^32 - 1
+  // 01111... then -> !>
+  return (1 << 31); // make overflow!
+}
 // 2
 /*
  * isTmax - returns 1 if x is the maximum, two's complement number,
@@ -162,7 +167,12 @@ int tmin(void) { return 2; }
  *   Max ops: 10
  *   Rating: 1
  */
-int isTmax(int x) { return 2; }
+int isTmax(int x) {
+  int all_one = -1;
+  int mn = 1 << 31;
+  int mx = mn & all_one;
+  return mx; // all ones without the most significant
+}
 /*
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
  *   where bits are numbered from 0 (least significant) to 31 (most significant)
