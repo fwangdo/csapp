@@ -171,8 +171,11 @@ int isTmax(int x) {
   int plus_one = x + 1;
   int reverse = ~x;
   int carrot = plus_one ^ reverse; // if it is zero, it would be -1 or max.
-  int common = plus_one & reverse;
-  return !(!(carrot ^ common));
+  int common = plus_one & reverse; // it should be one.
+  // we should give 1 only if carrot is zero and common is 100..03.
+  int cond1 = !carrot;    // carrot is zero?
+  int cond2 = ~(!common); // common is non-zero?
+  return cond1 & cond2;
 }
 /*
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -182,7 +185,12 @@ int isTmax(int x) {
  *   Max ops: 12
  *   Rating: 2
  */
-int allOddBits(int x) { return 2; }
+int allOddBits(int x) {
+  int basic = 0xAA;
+  int mask = basic + (basic << 1) + (basic << 2) + (basic << 3);
+  int res = (mask & x) ^ mask;
+  return !res;
+}
 /*
  * negate - return -x
  *   Example: negate(1) = -1.
