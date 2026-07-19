@@ -168,10 +168,11 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  int all_one = -1;
-  int mn = 1 << 31;
-  int mx = mn & all_one;
-  return mx; // all ones without the most significant
+  int plus_one = x + 1;
+  int reverse = ~x;
+  int carrot = plus_one ^ reverse; // if it is zero, it would be -1 or max.
+  int common = plus_one & reverse;
+  return !(!(carrot ^ common));
 }
 /*
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
