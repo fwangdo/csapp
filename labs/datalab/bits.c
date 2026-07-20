@@ -239,7 +239,18 @@ int isAsciiDigit(int x) {
  *   Max ops: 16
  *   Rating: 3
  */
-int conditional(int x, int y, int z) { return 2; }
+int conditional(int x, int y, int z) {
+  int isZero = !x;
+  int mask = ~0;
+  // among left and right, one should be zero.
+  // we should find a method to give 0b1..1 using 0.
+  int left = mask + isZero; // if iszero, then it should be zero.
+  int right = mask + (!isZero);
+
+  int left_value = y & left;
+  int right_value = z & right;
+  return left_value + right_value;
+}
 /*
  * isLessOrEqual - if x <= y  then return 1, else return 0
  *   Example: isLessOrEqual(4,5) = 1.
