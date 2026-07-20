@@ -199,6 +199,7 @@ int allOddBits(int x) {
  *   Rating: 2
  */
 int negate(int x) { return ~x + 1; }
+
 // 3
 /*
  * isAsciiDigit - return 1 if 0x30 <= x <= 0x39 (ASCII codes for characters '0'
@@ -208,7 +209,29 @@ int negate(int x) { return ~x + 1; }
  *   Max ops: 15
  *   Rating: 3
  */
-int isAsciiDigit(int x) { return 2; }
+int isAsciiDigit(int x) {
+  // 110000 <-> 111001
+  // 110001 -> "1" 111011
+
+  // 110000, 110001, 110010, 110011, 110100, 110101, 110110, 110111, 111000,
+  // 111001
+
+  // == <-> & ^ !
+  // 110111 <-
+  // 111000, 111001, 111010
+
+  int mask1 = 0b110;
+  int shifted = x >> 3;
+  int res1 = !(mask1 ^ shifted); // 110..
+
+  int mask2 = 0b111000;
+  int res2 = !(mask2 ^ x);
+
+  int mask3 = 0b111001;
+  int res3 = !(mask3 ^ x);
+
+  return res1 | res2 | res3;
+}
 /*
  * conditional - same as x ? y : z
  *   Example: conditional(2,4,5) = 4
@@ -260,6 +283,8 @@ int howManyBits(int x) { return 0; }
  *   Max ops: 30
  *   Rating: 4
  */
+
+// till here.
 unsigned floatScale2(unsigned uf) { return 2; }
 /*
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
