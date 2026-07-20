@@ -20,3 +20,16 @@
   - 이유? register에서 4byte를 변경하는 경우는 그 위의 higher order byte들에 0을 padding하기 때문. 
 - S / D를 일종의 연산으로 생각해야. S는 읽기. D는 쓰기. 
   - 예제. %rax가 S에서는 rax에 저장된 "값"이지만, D에서는 "저장될 주소 자체"를 의미함
+
+
+### 이동 명령어(작은 S에서, 큰 D로!)
+- movz, movs. 여기서 z는 zero fill을 s는 sign fill을 수행. 
+- 명령어는 각각 z는 5개, s는 6개(e.g., movzbw, movzbl, movzbq, movzwl, movzwq)
+- movzlq는 왜 없는가? A. 컨벤션에 의해 4바이트 복사는 zero-fill을 자동으로 수행하므로(=movl과 동일한 동작)
+- cltq -> SingExtend(%eax) -> %rax. 
+
+### Push and Pop
+- pushq S: R[%rsp] <- R[%rsp] - 8; M[R[%rsp]] <- S
+  - 복잡해보이지만, 1) stack이 더 작을수록 top에 가깝다는 것, 2) 동작이 stack pointer(rsp)를 움직인 다음 그 자리에 S를 저장한다는 것을 유념하면 쉬움.
+- popq D: D <- M[R[%rsp]]; R[%rsp] <- R[%rsp] + 8 
+  - 마찬가지. 꺼내고, 포인터 이동시키고. 
