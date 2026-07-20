@@ -258,7 +258,15 @@ int conditional(int x, int y, int z) {
  *   Max ops: 24
  *   Rating: 3
  */
-int isLessOrEqual(int x, int y) { return 2; }
+int isLessOrEqual(int x, int y) {
+  // overflow case
+
+  // normal case.
+  int z = x ^ y;
+  int rx = x ^ z;
+  int ry = y ^ z;
+  return 2;
+}
 // 4
 /*
  * logicalNeg - implement the ! operator, using all of
