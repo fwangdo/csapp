@@ -110,3 +110,13 @@
   - 기본적인 형태: cmove S R. "조건을 만족하면 S에 저장된 값을 R에 저장"
   - 이때 S는 레지스터나 메모리에 존재해야함. 
 - 문법은 set / jmp와 동일. e / ne, s / ns 등으로 구성
+
+### Loops
+- 기계 레벨 명령어에는 명시적인 loop(e.g., while / for) 명령어가 존재하지 않음. 단, jmp와 test를 통해 표현. 크게 두 가지 방법론이 있음.
+- 1. do-while style
+  - 초기화 코드; loop 진입점 -> body 구문 실행 -> 분기 조건 확인 -> 조건이 맞을 경우 진입점으로 되돌아 감 -> 아닐 경우 리턴. 
+  - loop .L2 -> body stmt -> test -> return rax
+- 2. while style.
+  - 크게 두 가지 방법론이 존재함. jump-to-middle / guarded do. 
+  - jump-to-middle: 두 개의 call site(.L2, .L3)가 순서대로 있을 때, 조건식을 계산한 뒤, .L3로 바로 이동, 조건식을 만족하지 않으면 리턴하고 만족하면 L2로 이동. L2가 반복구문, L3가 exit으로 생각할 수 ㅣ있음
+  - guarded-to: do-while과 유사함. call site가 두 개(.L2, .L3) 있음. do-while가 동일하게 첫 번째로 조건식을 계산함. if를 통해 계산하고 조건식을 만족하지 않으면 L3로 이동함. L3는 done으로 반복의 종료임. 조건식을 만족하면 L2로 "순서대로 이동하며 실행함(=명령어 점프 없음)" 
