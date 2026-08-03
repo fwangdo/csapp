@@ -216,3 +216,18 @@
 - vcvtsi2ssq / vcvtsi2sdq: quad integer에서 각각의 precision으로. 
 - 이 명령어의 핵심은 인자가 세 개라는 것. S1 / S2 / D로 구분되며, S는 메모리와 레지스터 둘 다 가능하지만, D는 항상 fp 레지스터여야. 
 - 두 번째 인자(S2)는 크게 신경 쓸 필요 없고, S1 -> D로 변환하는 것이 핵심. 
+  - 두 번째 인자는 upper-byte를 잘라내는(truncation) 역할을 수행. 예컨대, single precision의 경우, lower 4byte를 보존하고, 위 byte는 잘라낸다. 
+  - 두 번째 인자와 세 번째 인자가 같은 것이 일반적임. 
+
+### precision conversion. 
+- single to double은 두 단계를 거친다. vunpcklps -> vcvtps2pd 
+  - vunpcklps S1 S2 D는 다음과 같은 연산을 수행한다. S1을 \[s3, s2, s1, s0\], S2를 \[d3, d2, d1, d0\]라고 할 때, D에 \[s1, d1, s0, d0\]를 저장한다. 
+  - vunpcklps S S S를 수행할 경우, S가 \[x3, x2, x1, x0\]라고 할 때, 결과는 \[x1, x1, x0, x0\]가 된다. x3, x2 정보는 소실되고, x1, x0가 concat. 
+  - vcvtps2pd는 하위 64비트만 본다. 따라서 x1, x0만 보고, 이 각각을 double precision으로 보는 연산을 한다. 다시 말하자면, 
+    - 128bit 레지스터를 \[double(x0) / double(x0)\] 형태로 만든다. 
+    - 추상화하자면, 하위 64비트를 각각 32비트씩 쪼개서 double 형태로 변경한다. 결과는 128비트이고, 동일한 64비트가 두개 이어붙어져 있으며, 해당 64비트는 x0를 double로 변경한 것. 
+- double to single은 vmoddup -> vcvtpd2psx로 수행. 
+
+### fp 레지스터의 특징 
+- fp 리턴값은 \%xmm0에 저장됨. 
+- xmm0 - xmm8 모두 caller saved임. 
