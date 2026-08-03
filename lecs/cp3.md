@@ -195,3 +195,24 @@
 
 ## 3.11 Floating Point
 - FP 연산은 MMX -> SSE -> AVX의 순서로 발전해왔음. 
+- 각 버전에 따라 대응되는 fp 전용 레지스터가 존재하고 이름은 각각 MM, XMM, YMM임. 
+  - 각각 8 / 16 / 32 바이트의 크기를 가지는 레지스터임. 
+
+### mov instructions
+- vmovss S D: S / D에는 레지스터 / 32비트 메모리(혹은 그 반대)만 올 수 있음. single precision fp를 복사하는 연산. 
+- vmovsd S D: S / D에는 레지스터 / 64비트 메모리(혹은 그 반대)만 올 수 있음. double precision fp를 복사하는 연산. 
+- vmovaps X X: 레지스터에서 다른레지스터로 가는 연산. single precision을 바이트 단위에 맞추어 정렬된(aligned) 형태로 복사
+- vmovapd X X: 레지스터에서 다른레지스터로 가는 연산. double precision을 바이트 단위에 맞추어 정렬된(aligned) 형태로 복사
+- vmovapd / aps는 "레지스터 전체를 복사"하는 작업이지만, gcc에서는 32bit / 64bit 등 특정 레지스터의 하위 비트만 필요한 경우에도 사용하는 경우 존재 
+  - 이유: 레지스터 복사가 쉽기 때문. "A 레지스터는 B 레지스터와 동일하다"와 같은 형태의 표현도 가능함. 
+
+### fp to int conversion 명령어 
+- vcvttss2si / vcvttsd2si: single precision 혹은 double precision을 integer로 편환하는 연산. 
+  - S는 메모리 혹은 fp 레지스터지만, D는 반드시 레지스터여야 함. 
+- vcvttss2siq / vcttsd2siq: 두 precision을quad word integer로 변경하는 연산. 
+
+### int to fp conversion 명령어 
+- vcvtsi2ss / vcvtsi2sd: integer에서 각각의 precision으로. 
+- vcvtsi2ssq / vcvtsi2sdq: quad integer에서 각각의 precision으로. 
+- 이 명령어의 핵심은 인자가 세 개라는 것. S1 / S2 / D로 구분되며, S는 메모리와 레지스터 둘 다 가능하지만, D는 항상 fp 레지스터여야. 
+- 두 번째 인자(S2)는 크게 신경 쓸 필요 없고, S1 -> D로 변환하는 것이 핵심. 
