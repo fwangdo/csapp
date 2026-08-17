@@ -22,5 +22,3 @@
   - to zero. to satisfy |x| <= |hat(x)|
   - to down, x <= hat(x)
   - to up is vice versa. 
-
-
