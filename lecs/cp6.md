@@ -60,3 +60,35 @@
 - usb가 대표적이며 다른 io 기기들에게 정보를 전달하기 위해 사용됨.
 - I/O에게 정보를 전달하는 방법? memory-mapped i/o.
   - 기본 접근: 각 io 기기마다 기기에 대응하는 메모리 주소를 할당하고, 이를 io port라고 함.
+- DMA: direct memory access의 줄임말로 cpu의 개입 없이 메모리간 정보를 이동(e.g., disk -> main memory, vice versa)을 수행하는 것을 의미.
+
+### SSD
+
+- flash translation layer라는 특정한 영역에 펌웨어가 설치되어 logical block -> physical layer 주소를 대응시켜줌.
+- read가 write보다 빠르다. 이유? write의 경우 실행시 page 단위를 다 지우고, 해당 위치에 write를 수행하기 때문
+  - write는 모든 비트를 1로 변환하는 작업
+  - 이때 소실되는 일부 정보들은 별도의 복사를 수행해야하므로, 복사 비용도 별도로 존재.
+
+## 6.2 Locality
+
+### Basic idea
+
+- locality는 두 축으로 나누어짐. temporal / spatial.
+- temporal: 시간축. "이전에 접근했던 데이터를 얼마나 가까운 시간 안에 또다시 사용할 것인가?"
+- spatial: 공간축. "이전에 접근했던 데이터와 인접한 데이터를 가까운 시간 안에 사용할 것인가?"
+
+### stride-k
+
+- stride-k pattern: 연속된 메모리에서 k칸씩 건너뛰며 참조(reference)하는 패턴을 의미함.
+  - k 값이 커질수록 spatial locality는 떨어짐. 참조되는 메모리마다 인접성이 떨어지니까.
+- row-major order: 두 개 이상의 중첩된 loop이 있고 2차원 배열을 순회한다고 가정했을 때, 행(row)을 우선적으로 돌면(=바깥쪽 loop이 행기준) row-major order.
+  - 일반적인 배열의 메모리 저장 방식과 궁합이 좋음. 행을 기준으로 연속저장하기 때문에 공간 locality가 좋다.
+
+### cache에 대한 신기한 사실들
+
+- 하나 신기한 점은 isa-level에서도 locality가 존재할 수 있다는 것.
+  - 예컨대 loop의 경우 동일한 작업을 반복하고(e.g., mov), 이러한 이유로 동일한 명령어 바이트를 메모리에서 불러올 필요가 없음.
+  - 여기서, "결국 실행이라는 게 메모리를 보아야 알 수 있는 건데, 다음 실행이 캐시에 있는지 아닌지를 어떻게 판단할 수 있는가"를 질문할 수 있음.
+  - A. cpu는 다음에 실행할 명령어의 주소(pc)를 알고 있고, 해당 주소의 데이터가 캐시에 있는지 없는지 여부만 판단하면 됨.
+
+## 6.3 메모리 계층
