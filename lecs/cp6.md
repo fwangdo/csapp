@@ -131,3 +131,19 @@
   - 먼저 set index를 통해 set에 접근하고,
   - 캐시라인에서 태그를 찾고, 그게 valid가 1이라면 데이터를 가져옴.
   - 못 찾으면 miss.
+
+### 계층과 사용과정 재정리
+
+- cpu에서 특정 주소를 보고 "이게 캐시에 있나 없나 확인하는 주소는",
+  - tag / set index / block offset 형태임. 정확히는 처음부터 이렇게 생겼다기보단 캐시가 이렇게 해석을 해줌.
+- 캐시 내부는 valid / stored tag(찾아지는 검색인덱스) / b byte data block 형태고.
+- 캐시로부터 가져와짐을 당하는 메모리는 연속된 메모리주소 배열이지만
+  - tag / set index / bit offset / block number와 같이 해석할 수도 있음.
+  - block number가 추가된 이유? 캐시 크기가 메모리 크기보다 작으므로 반드시 블락을 확인하는 작업이 필요하기 때문.
+
+### set associative cache
+
+- conflict cache가 잦은 이유: 하나의 set에 하나의 line 밖에 없기 때문. line(이하 E)을 늘리면 S 내에서도 구분을 할 수 있어 conflict을 줄일 수 있음.
+  - E를 늘린 형태를 E-way set associative cache라고 칭함. 1 < E < B / C 형태.
+- set associative cache는 태그와 valid bits를 concat하면 해당 block의 컨텐츠를 제공하는 일종의 associative memory(map) 형태임.
+  - valid bits가 1이고 tag가 일치하는 것을 찾자마자 바로 hit함. 중복되는 태그는 존재하지 않기 때문.
