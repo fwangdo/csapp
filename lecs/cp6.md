@@ -147,3 +147,49 @@
   - E를 늘린 형태를 E-way set associative cache라고 칭함. 1 < E < B / C 형태.
 - set associative cache는 태그와 valid bits를 concat하면 해당 block의 컨텐츠를 제공하는 일종의 associative memory(map) 형태임.
   - valid bits가 1이고 tag가 일치하는 것을 찾자마자 바로 hit함. 중복되는 태그는 존재하지 않기 때문.
+
+### full associative cache
+
+- E가 C / B가 되는 경우. 다시 말해 set을 하나로 두고 line을 극한으로 두는 방식.
+
+### Write에서 발생하는 상황
+
+- 캐시된 지역에 write를 해야하는 경우, 이를 write-hit이라고 한다.
+  - 예를 들어, cpu가 주소 x를 20으로 변경하라는 지시를 내렸을 때, 캐시도 x를 포함하고 있으면 캐시 / 메모리 둘 다 변경해서 동기화해야함.
+  - 이때 크게 두 가지 방법이 존재함.
+- write-through: 캐시를 변경해야할 때마다, lower level 메모리에도 그대로 반영하기. 단순하고 직관적이나 비용이 큼(매번 반영해야 하니까)
+- write-back: 캐시만 변경해두고, 해당 데이터가 캐시에서 쫓겨날 경우에만 메모리에 업데이트하기. 큰 효율 상승이 있으나 복잡한 요소가 들어가야.
+  - 예? dirty-bit. 캐시와 메모리 간 불일치가 있을 경우 dirty-bit을 1로 변경해두어야
+
+- 반대로 write-miss 상황도 존재할 수 있다. 이때도 방법은 크게 두가지.
+  - write-allocate: 변경해야하는 걸 캐시에 올려두고 쓴다. write의 spatial locality를 기대하는 방법.
+  - no-write-allocate: lower memory를 직접 변경하고, 캐시는 변경하지 않는다.
+- 보통은 write-through는 no-writhe-allocate와, write-back은 write-allocate와 어울려 사용한다.
+- 현대 시스템에서는 write-back & write-allocate를 가정하는 게 좋음. 특히 아래 계층의 메모리에서 write-back은 필수적임.
+
+### i-cache / d-cache
+
+- 캐시는 최근 i-cache / d-cache / unfied cache로도 분화.
+- i-cache: instruction만 저장. d-cache: data만 저장. unifired cache 둘 다 저장.
+- i와 d를 분리하면 좋은 이유? 둘을 "동시에" 처리하는 것이 가능하기 때문.
+- instruction cache의 경우 따로 두면 conflict miss가 없어진다. 단, capacity miss가 발생할 가능성이 높아짐.
+
+### 캐시 퍼포먼스에 대한 특징들
+
+- 캐시 사이즈: 캐시가 크면 클수록 hit time(set selection, line identification, word selection / l1 캐시에서 cpu에 데이터를 전달하는 시간)이 커지기 마련.
+- 블록 사이즈: 장단점이 있음.
+  - 장점: 공간 locality를 고려한 캐시 힛 가능성이 높아진다. 블록사이즈가 크기 때문에 직관적으로 성립함.
+  - 단점: 시간 locality에서는 좋지 않을 수도. 예를 들어 유사 시간에 사용되는 변수들이 메모리 여기저기 흩어져있는 경우. 또 한 번 miss 할 때마다 가져와야하는 데이터의 크기가 크기 때문에 miss penalty(lower memory에서 끌고오는 시간)이 길다.
+- 라인 사이즈(associativity):
+  - 장점: conflict miss 수를 줄여준다. 직관적으로 당연. 라인에 겹치는 게 conflict miss인데 라인수가 많아지니까.
+  - 단점: 본질적으로 빠르게 만들기 어렵다! 여러 개의 라인에 대해서 LRU를 결정해야하는 등 머리 아픈 지점이 많음.
+    - 하나 알아두어야 할 것은, "여러개를 조회해야하는 것" 자체는 문제가 아닐 수 있다는 것. 태그를 한 개씩 순차조회 하는 게 아니고 여러 비교기로 병렬 비교가 가능하므로.
+    - 그러나 병렬비교가 가능하다고 하더라도 회로 자체가 커져야 하고(mux 생각하면 됨), 이것 자체가 느리게 만드는 요소임을 감안해야.
+    - 정리하자면, 병렬비교가 가능하지만 결국 큰 회로가 필요하다.
+
+## How to write cache-friendly code
+
+### 원칙
+
+- Make the common case go fast: 많은 프로그램들은 시간을 많이 소요하는 "주된 영역(e.g., inner loop"이 있음. 이 지점을 핵심으로 보아야.
+- 룹에서 캐시미스 줄이기
