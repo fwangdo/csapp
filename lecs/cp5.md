@@ -113,3 +113,23 @@
 - 비효율의 핵심은 포인터라기보단, "이 변수값이 이 룹 안에서 매번 같은 메모리를 참조하고 있는가?"이다.
 
 ## 5.7 현대 프로세서에 대한 이해
+
+- 실제 머신에서 실행되는 동작은 코드의 순서와 다소 다름. 명령어 레벨 병렬처리라는 것이 가능함.
+- 성능 측정을 위한 두 가지 기준. latency bound / throughput bound이 있고, 성능의 "하한"을 제시함.
+- latency bound: 의존성(dependency)으로 인해 병렬계산이 불가능한 경우. 계산시간(latency)이 L이고 걔산해야할 게 n개 있으면 Ln으로 계산되고, CPE는 L(element n으로 나누니까)
+- throughput bound: 한 사이클당 계산되는 element의 비율. 예컨대 계산할 수 있는 functional unit이 2개 있고, 한 명령어를 실행하는 주기가 4라면, 2 / 4로 계산. 0.5의 비율
+
+### 동작 과정
+
+- 인텔 프로세서는 수퍼스칼라를 가정하고, out of order 기반 병렬 처리를 수행할 수 있음. 크게 두 가지 요소가 디자인에 존재함.
+- ICU: 메모리로부터 명령어를 순서대로 읽거나 생성함. 일종의 실행 준비.
+- EU: 읽어둔 걸 실제로 실행.
+- ICU는 EU가 실행을 마무리할 때까지 기다리지 않고 미리미리 읽어두는 작업을 수행. 여기서 문제는 branch임.
+- 이때 branch prediction을 수행하고 실행될 것 같은 branch를 선택한다. 예측에 실패하면 다시 되돌리는(reset) 작업을 수행.
+- fetch control은 다음에 어떤 instruction을 가져올지 결정하는 로직으로 branch prediction도 이중 일부임.
+
+### instruction decoding
+
+- 하나의 어셈블리 명령어도 더 원초적인 형태로 쪼갤 수 있음. 이런 과정을 instruction decoding이라고 하고.
+- 더 쪼개면 좋은 점? 쉽게 병렬화 시킬 수 있음.
+- EU는 이런 명령어들을 매 사이클마다 받고, 각 명령어에 특화된 functional unit으로 보냄.
