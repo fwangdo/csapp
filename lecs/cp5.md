@@ -166,3 +166,86 @@
 - write-only: 데이터 이동(mov)의 도착지점으로만 사용되는 경우.
 - local: 룹 속에서 업데이트 되고, 사용되기도 하지만 한 iteration과 다른 iteration 사이에는 의존 관계가 없는 경우(e.g., cmp의 결과)
 - loop: 이전 룹에서 사용되던 게 다음룹에서도 사용되는 경우. 누적되는 합이 대표적.
+- 아래와 같은 asm을 생각해보자
+
+```asm
+Inner loop of combine4. data_t = double, OP = *
+acc in %xmm0, data+i in %rdx, data+length in %rax
+1 .L25: loop:
+2 vmulsd (%rdx), %xmm0, %xmm0 Multiply acc by data[i]
+3 addq $8, %rdx Increment data+i
+4 cmpq %rax, %rdx Compare to data+length
+5 jne .L25 If !=, goto loop
+```
+
+- xmm0 / rdx는loop이고, rax는 read-only.
+- 의존성 그래프를 그려보면 load, mul, add는 명백히 다음 iteration 실행에 영향을 줌(어느 주소에 있는 값을 가져올 건가? 얼마만큼 저장되어있나?)
+- cmp, jne도 rdx 의존성이 존재함. 단 branch prediction을 가정하면,
+  - cmp는 결국 "비교결과를 레지스터에 표현할 뿐"이고, 다음 iteration에 영향을 끼치진 않음.
+  - jne는 branch prediction에서 taken되었다고 가정하면 결국 다음 iteration 자체엔 영향이 없음(=할지 말지를 결정할 뿐, 하면 무얼할지를 결정하지는 않음)
+- 이러한 이유로 load -> mul & add를 critical path로 볼 수 있음
+- 여기서 더 정확히는load -> mul / add는 dest가 달라 병렬 계산이 가능하고, 이러한 이유로 add보다 더 긴 수행시간을 갖는 mul의 cpe가 최종 cpe가 됨.
+
+## 5.8 Loop unrolling
+
+- loop unrolling이란 loop의 iteration 수를 줄이고, 한 loop 안에서 처리되는 element의 수를 늘리는 방법이다. 크게 두 가지 장점이 있는데,
+- 1. 프로그램의 결과에 개입하지 않는 요소인 "loop indexing"을 계산하는 횟수를 줄일 수 있고,
+- 1. critical path에 들어가는 element의 수를 줄일 수 있다.
+
+### 2 by 1 unrolling
+
+```c
+1 /* 2 x 1 loop unrolling */
+2 void combine5(vec_ptr v, data_t *dest)
+3 {
+4 long i;
+5 long length = vec_length(v);
+6 long limit = length-1;
+7 data_t *data = get_vec_start(v);
+8 data_t acc = IDENT;
+9
+10 /* Combine 2 elements at a time */
+11 for (i = 0; i < limit; i+=2) {
+12 acc = (acc OP data[i]) OP data[i+1];
+13 }
+14
+15 /* Finish any remaining elements */
+16 for (; i < length; i++) {
+17 acc = acc OP data[i];
+18 }
+19 *dest = acc;
+20 }
+```
+
+- 왜 2 by 1인가? 한 iteration에서 처리하는 element가 2개이고, accumulator는 1개이므로.
+- 이 방법은 누적값(accumulator)이 하나라 loop의 값을 매번 비교하는 오버헤드는 줄일 수 있지만, 본질적으로 critical path를 병렬화 시킬 수는 없음.
+
+## 5.9 병렬성 강화하기
+
+- combine operation(우리 예제에서는 덧셈과 곱셈)이 결합법칙과 교환법칙을 만족한다면 우리는 아래와 같은 방법을 고려해볼 수 있음.
+- 짝수번째 원소들과 홀수번째 원소들을 별도의 누적으로 계산하는 방법. 코드로 보면 아래와 같음.
+
+```c
+1 /* 2 x 2 loop unrolling */
+2 void combine6(vec_ptr v, data_t *dest)
+3 {
+4 long i;
+5 long length = vec_length(v);
+6 long limit = length-1;
+7 data_t *data = get_vec_start(v);
+8 data_t acc0 = IDENT;
+9 data_t acc1 = IDENT;
+10
+11 /* Combine 2 elements at a time */
+12 for (i = 0; i < limit; i+=2) {
+13 acc0 = acc0 OP data[i];
+14 acc1 = acc1 OP data[i+1];
+15 }
+16
+17 /* Finish any remaining elements */
+18 for (; i < length; i++) {
+19 acc0 = acc0 OP data[i];
+20 }
+21 *dest = acc0 OP acc1;
+22 }
+```
