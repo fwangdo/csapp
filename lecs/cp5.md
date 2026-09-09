@@ -249,3 +249,37 @@ acc in %xmm0, data+i in %rdx, data+length in %rax
 21 *dest = acc0 OP acc1;
 22 }
 ```
+
+### Reassociation Transformation
+
+- 먼저 계산할 식의 순서를 바꾸는 것만으로도 성능을 향상 시킬 수 있다. 아래 코드를 보자.
+
+```c
+1 /* 2 x 1a loop unrolling */
+2 void combine7(vec_ptr v, data_t *dest)
+3 {
+4 long i;
+5 long length = vec_length(v);
+6 long limit = length-1;
+7 data_t *data = get_vec_start(v);
+8 data_t acc = IDENT;
+9
+10 /* Combine 2 elements at a time */
+11 for (i = 0; i < limit; i+=2) {
+12 acc = acc OP (data[i] OP data[i+1]);
+13 }
+14
+15 /* Finish any remaining elements */
+16 for (; i < length; i++) {
+17 acc = acc OP data[i];
+18 }
+19 *dest = acc;
+20 }
+```
+
+- (acc OP data[i]) OP data[i+1]가 acc OP (data[i] OP data[i+1])로 바뀌었고, 이 변화가 2배의 성능향상을 만들어낸다.
+- 누적값에 연산을 하고, 그 결과에 연산을 한 번 더 하는 경우를 생각해보자. 한 연산에 5 사이클 걸린다고 생각하면 두 번이므로 10 사이클, element가 2개이므로 10 / 2
+- 하지만, (data[i] OP data[i+1])은 누적값과 무관하게 먼저 계산할 수 있다. 이 뜻은 critical path에서 제외할 수 있다는 의미
+  - Out of order를 잘 생각해보면 누적값이 필요하지 않는 한(=이전 iteration의 결과 필요 X), 인접해있는 값들을 계산해버리면 그만이기 때문.
+  - 이러한 이유로 누적값을 계산하는 path만이 남게되고 한 번의 연산만 수해되므로 5 / 2.
+- 핵심은, "현재 계산이 이전 iteration에 의존되지 않는 상태"를 잘 만들어주는 것. 이런 방법을 k by 1a unrolling이라고 칭함.
