@@ -297,3 +297,16 @@ acc in %xmm0, data+i in %rdx, data+length in %rax
   - A. 맞다. cmov의 강점은 prediction 없이 브랜치를 독립적으로 병렬로 계산하여, 런타임에 어떤 브랜치를 타든 "이미 계산됐음" 상태를 만드려는 것.
 
 ## 5.12 메모리 퍼포먼스
+
+- read / write dependency: 말 그대로 load / store 명령어 간에 의존성이 생기는 경우.
+  - Q. 뭐가 그렇게 특별한 건가? A. store는 통상 의존성을 발생시키지 않기 때문. 읽어야 하는 레지스터가 없기 때문에, 값을 변화시켜도 의존성이 발생하지 않음. 그냥 ooo를 수행할 수 있다.
+  - 하지만 load가 store 값에 의해 결정되는 경우, store가 끝나야만 load할 수 있고 이 경우엔 critical path가 늘어나는 결과를 초래함.
+
+### store buffer
+
+- store buffer란 store 연산이 요청되었지만 완료되지는 않은 연산들을 buffer에 저장되는 것을 의미한다.
+- 굳이 캐시에 데이터를 업데이트 하지 않아도, load 연산에서 store한 값들을 가지고 오게할 경우 유용하게 사용할 수 있음.
+- store buffer를 생성하는 과정은 크게 두 과정으로 구분됨. s_addr과 s_data.
+  - s_addr: 저장될 주소를 확인하고, store buffer를 위한 저장주소를 확보하는 과정
+  - s_data: s_addr를 통해 확보한 주소에 값들을 저장해두는 과정
+- store buffer가 저장하고 -> 찾고 -> 회수하는 과정이 있다는 걸 강안하면 s_addr -> s_data 간의 의존성이 존재.
