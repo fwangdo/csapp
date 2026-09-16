@@ -140,5 +140,18 @@
 
 ### waitpid 상태의 종류
 
-- WIFEXITED: 정상적으로 종료되는 경우.
--
+- WIF -> 무슨 일이 있었는가? / W...STATUS, W...SIG -> 상태가 어떤가?
+- WIFEXITED: 정상적으로 종료되는 경우. exit을 호출하거나 리턴하는 경우.
+- WEXITSTATUS: 정상적으로 종료됐을 때 exit code가 몇 번인지?
+- WIFSIGNALED: 정상 exit이 아니라, signal 때문에 죽었는지?
+- WTERMSIG: 어떤 시그널 때문에 죽었는지?
+- WIFSTOPPED: waitpid로 돌아온 이유가 중지(stop) 때문인지?
+- WSTOPSIG: 어떤 stop signal 때문인지?
+- WIFCONTINUED: sigcont 때문에 재시작했는지?
+
+### loading and running program
+
+- execve를 기준으로 설명해보자. 현재 프로세스에서 프로그램을 실행해주는 함수이다.
+  - 형태는 `int execve(const char *filename, const char *argv[], const char *envp[]);`과 같이 생김.
+- 통상적인 프로그램의 main과 굉장히 유사. filename은 말 그대로 파일 이름이고, argv는 인자로 들어오는 string의 주소, envp는 환경변수들의 포인터.
+- execve는 성공하면 리턴이 없고, 실패하는 경우에만 리턴이 존재한다. 실패하는 경우는 대응하는 파일이 없는 경우 등.
