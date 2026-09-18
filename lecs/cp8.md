@@ -194,3 +194,84 @@
 - G5. sig_atomic_t를 쓰자: 프로세스와 핸들러는 공유변수를 같이 사용할 수 있다. 이걸 flag를 통해서 소통하게 된다. 여기서 중요한 점은, 프로세스는 공유변수를 읽을 때 원자단위의 read / write만 써야한다는 것이다.
   - Q. 원자단위의 read / write가 뭔가? A. 정말 읽거나, 대입만 하는 것. x = 10과 같은 것. x++는 "읽고 현재값을 기준으로 10을 더하는" 행동이기 때문에 원자단위 write가 아님.
   - Q. 왜 그래야 하는가? 프로세스가 이전 값에 의존해서 프로그래밍을 했는데, 핸들러가 공유변수를 바꾸면 논리가 깨질 수 있음. "읽어둔 공유변수값이 현재는 다를 수 있다는 전제에서", "안전하게 프로그래밍할 수 있는" 방법론이 필요.
+
+### Portable signal handling
+
+- unix의 안 좋은 점 중 하나는 signal hanldling semantics가 제각기라는 것.
+- 이런 문제를 해결하기위해 handler install을 비교적 쉽게 하게 해주는 sigaction 함수가 있음.
+
+### 플로우 동기화: 동시성 버그 피하기
+
+- 어느 시점에 concurrent flow를 실행시킬 것이냐는 굉장이 중요한 문제. 옳은 실행을 가능하게 해주는 지점도, 그렇지 않은 지점도 있다. 문제는 후보가 너무 많음.
+- 다음 예제를 고려해보자.
+
+```c
+1 /* WARNING: This code is buggy! */
+2 void handler(int sig)
+3 {
+4 int olderrno = errno;
+5 sigset_t mask_all, prev_all;
+6 pid_t pid;
+7
+8 Sigfillset(&mask_all);
+9 while ((pid = waitpid(-1, NULL, 0)) > 0) { /* Reap a zombie child */
+10 Sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
+11 deletejob(pid); /* Delete the child from the job list */
+12 Sigprocmask(SIG_SETMASK, &prev_all, NULL);
+13 }
+14 if (errno != ECHILD)
+15 Sio_error("waitpid error");
+16 errno = olderrno;
+17 }
+18
+19 int main(int argc, char **argv)
+20 {
+21 int pid;
+22 sigset_t mask_all, prev_all;
+23
+24 Sigfillset(&mask_all);
+25 Signal(SIGCHLD, handler);
+26 initjobs(); /* Initialize the job list */
+27
+28 while (1) {
+29 if ((pid = Fork()) == 0) { /* Child process */
+30 Execve("/bin/date", argv, NULL);
+31 }
+32 Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); /* Parent process */
+33 addjob(pid); /* Add the child to the job list */
+34 Sigprocmask(SIG_SETMASK, &prev_all, NULL);
+35 }
+```
+
+- 별로 문제가 없어보이지만 `main에서 만든 addjob 전에 자녀 프로세스가 죽는 경우`를 생각해보자.
+- 자녀 프로세스가 SIGCHLD 시그널 전송 -> 핸들러 동작 -> deletejob 수행의 과정을 거치면 addjob 전에 deletejob을 수행하는 문제가 발생한다.
+- 아래와 같이 sigchld를 막음으로서, 핸들러가 가장 빠르게 동작한다고 가정해도 순서를 지킬 수밖에 없도록 하는 게 해결책.
+
+```c
+29 while (1) {
+30 Sigprocmask(SIG_BLOCK, &mask_one, &prev_one); /* Block SIGCHLD */
+31 if ((pid = Fork()) == 0) { /* Child process */
+32 Sigprocmask(SIG_SETMASK, &prev_one, NULL); /* Unblock SIGCHLD */
+33 Execve("/bin/date", argv, NULL);
+34 }
+35 Sigprocmask(SIG_BLOCK, &mask_all, NULL); /* Parent process */
+36 addjob(pid); /* Add the child to the job list */
+37 Sigprocmask(SIG_SETMASK, &prev_one, NULL); /* Unblock SIGCHLD */
+38 }
+39 exit(0);
+```
+
+### Explicitly Waiting for Signals
+
+- 실행을 위해 시그널 핸들러를 기다려야 하는 형태도 존재함. 예를 들면 쉘. 입력을 받기 위해 자녀 프로세스가 수확되고 프로세스가 종료되는 작업이 필요.
+- 아래 코드를 생곡해보자.
+
+```c
+while (!pid) {
+  1. pause(); 
+  2. sleep(1); 
+}
+```
+
+- 1은 correcntess가 훼손될 수 있음. 이유? pid를 확인하고 pause로 넘어가는 순간 pid가 핸들러에 의해 변할 수도.
+- 2는 correctness 이슈는 없지만, 너무 느리다. 다른 방법이 필요함.
