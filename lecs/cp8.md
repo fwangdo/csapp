@@ -264,7 +264,21 @@
 ### syscall 정리
 
 - 더 논리를 진행하기 전에, unix에서 제공하는 syscall과 그 인자를 파악하는 작업이 필요.
--
+- 먼저 sigprocmask에 대해 알아야한다. 아래와 같이 생김.
+
+```c
+int sigprocmask(
+    int how,
+    const sigset_t *set,
+    sigset_t *oldset
+);
+```
+
+- 여기서 how는 SIG_BLOCK, SIG_UNBLOCK, SIG_SETMASK 세 가지 값만이 가능하고,
+  - blcok은 현재 blocked set에 set을 추가하고, unblock은 빼고, setmask는 set으로 아예 대체한다.
+  - setmask는 조금 독특한데, set을 변경한뒤, oldset 포인터에 기존 blocked set의 주소를 저장해둔다.
+- sigset_t mask_all, mask_one, prev_one 같은 변수들이 자주쓰이는데, 시그널 집합을 표현하는 타입이라고 생각하면 되고,
+- 이 타입들은 Sigemptyset, Sigaddset, Sigfillset과 같이 쓰인다. emptyset은 해당 주소에 빈집합을 만들어주고, addset은 원소를 더하며 fillset은 해당 집합을 모든 시그널로 채운다.
 
 ### Explicitly Waiting for Signals
 
@@ -280,3 +294,26 @@ while (!pid) {
 
 - 1은 correcntess가 훼손될 수 있음. 이유? pid를 확인하고 pause로 넘어가는 순간 pid가 핸들러에 의해 변할 수도.
 - 2는 correctness 이슈는 없지만, 너무 느리다. 다른 방법이 필요함.
+
+### nonlocal jumps
+
+- C에서는 한 함수가 리턴되지 않고도 실행권을 다른 함수에 넘길 수 있으며, 유저가 사용할 수 있는 ECF를 제공한다. setjmp, longjmp가 그것.
+- 먼저 setjmp는 아래와 같이 정의된다.
+
+```c
+int setjmp(jmp_buf env);
+int sigsetjmp(sigjmp_buf env, int savesigs);
+```
+
+- env에는 calling environment(e.g., 스택 포인터, pc 등)이 저장된다. 리턴값은 0인데, 해당 리턴 값을 저장해두는 것은 잘못된 행동임.
+- 다음은 longjmp.
+
+```c
+void longjmp(jmp_buf env, int retval);
+void siglongjmp(sigjmp_buf env, int retval);
+```
+
+- longjmp는 받은 env를 복원해서 함수를 실행한다. 실행한 함수는 가장 최근에 setjmp가 실행된 지점에 리턴을 한다. 또한 retval은 non-zero 값이다.
+- setjmp는 longjmp로 리턴받기 때문에, 한 번 호출하고, 여러 번 리턴 받는 것이 가능하다.
+- 왜 이런 형태의 함수가 필요한가? 함수 실행시 에러를 받아낼 경우 stack unwinding의 비용을 줄이고 싶기 때문이다.
+  - 예를 들어 매우 nested된 call이 에러를 발견했다고 가정해보자. 돌아가야하는 게 너무 많을 것. 이때 setjmp <-> longjmp로 바로 이동하도록 만들어주면 부담이 거의 없이 사용 가능하다.
