@@ -116,3 +116,9 @@
 - step5. fault handler가 희생자 페이지(victim page)를 찾고, 변경된 페이지는 disk out된다.
 - step6. fault handler가 PTE를 업데이트한다. 대응되는 PPN / PPO를 쓰고.
 - step7. 실패한 명령어로부터 재실행한다. 이때부턴 page hit의 논리를 그대로 따라가면 됨.
+
+### Table lookahead buffer
+
+- pte를 l1 cache에서 가져오려면 n cycle이 드는데, 이것도 줄이고 싶고, 이렇게 등장한 개념이 TLB임.
+- tlb는 index와 tag, 그리고 vpo로 구성되어있는 캐시이고, index와 tag를 통해 set selection을 수행한다. single line cache라 set selection 만으로 값은 획득할 수 있고, vpo는 pa를 계산하기위해 쓰인다.
+- 순서는 cpu가 가상주소 만들면 -> mmu가 tlb에서 pte 가지고오고 -> pte에서 가상주소 번역한 다음 캐시나 메모리에 피지컬 주소로 저장된 값 요청하고 -> 프로세서(cpu)가 값 획득하고.
