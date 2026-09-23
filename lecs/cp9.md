@@ -86,3 +86,33 @@
   - sup bit이 1이면 커널모드만 접근 가능함. 유저모드로 실행중인 프로세스는 접근 불가능.
   - write / read도 마찬가지. 1인 경우에만 쓰고 읽는 게 가능.
   - 허가되지 않은 종류의 행동을 하게 되면 segmentation fault가 발생함. 핸들러가 sigsegv를 수행하는 방식으로 처리.
+
+## 9.6 주소 번역(address translation)
+
+- 먼저 VAS와 PAS를 정의하자. VAS는 virtual address space, PAS는 physical adress space를 의미한다.
+  - 매핑 함수는 가상주소 A를 넣었을 때, 그게 피지컬 주소 영역에 있으면 그에 대응되는 주소를, 그렇지 않으면 공집합을 반환한다.
+- cpu가 mmu를 통해 매핑을 수행하는 과정을 생각해보자. 해당 작업에는 PTBR(page table base register)라는 전용 레지스터가 사용된다.
+  - 가상 주소가 n비트라고 할 때, 이건 크게 두 개로 나누어진다. 페이지 넘버를 의미하는 VPN과, 페이지 내 데이터의 위치를 이야기하는 VPO(offset)이 그것.
+  - 물리주소도 마찬가지 크게 두 개로 나누어지고, 넘버는 PPN, 위치는 PPO로 불린다.
+  - PRBR이 현재 page table을 가리고 있을 때, 적당한 vp index가 들어온다고 가정해보자.
+    - VPN은 바로 알 수 있다. 따라서 그에 대응되는 PPN은 바로 알 수 있고, VPO와 PPO는 "사실상 동일"하다. 즉 인덱스를 통해 가상 페이지 주소를 찾고, 그에 대응되는 피지컬 페이지 매핑을 얻고, VPO를 그대로 사용하면 원하는 메모리에 접근할 수 있다는 것.
+
+### page hit
+
+- 다음 다섯 단계를 거침.
+- 프로세서(cpu)가 가상주소를 만들고 mmu에 보냄.
+- mmu가 pte address를 만들고 cache/main memory에 요청을 보냄.
+  - pte address를 만든다는 게 무슨 뜻인가? 정보를 찾는 입장에서는 pte가 필요한데, 그게 어디있는지 모르니 mmu가 pte 주소를 찾는(계산하는) 과정을 의미함.
+- cache/main memory는 pte를 만들고 리턴.
+  - 정확히 말하면 만든다기보단, 이미 존재하는 PTE를 읽어서 가져옴.
+- mmu는 물리주소를 만들고 다시 cache/memory 쪽으로 보냄.
+  - 물리주소를 만든다는 것은 가져온 PTE를 기반으로 PPN / PPO를 확보한다는 것.
+- cache/main memeory가 요청된 자료를 프로세서에게 전송.
+
+### page fault
+
+- 이건 스텝이 7단계임. 1-3은 동일한데, "못 찾은 상황"을 가정해보자.
+- step4. 확인해보니 PTE의 valid bit이 0임. MMU가 예외를 발생시키고 os의 예외 처리기가 반응함.
+- step5. fault handler가 희생자 페이지(victim page)를 찾고, 변경된 페이지는 disk out된다.
+- step6. fault handler가 PTE를 업데이트한다. 대응되는 PPN / PPO를 쓰고.
+- step7. 실패한 명령어로부터 재실행한다. 이때부턴 page hit의 논리를 그대로 따라가면 됨.
