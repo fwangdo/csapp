@@ -122,3 +122,9 @@
 - pte를 l1 cache에서 가져오려면 n cycle이 드는데, 이것도 줄이고 싶고, 이렇게 등장한 개념이 TLB임.
 - tlb는 index와 tag, 그리고 vpo로 구성되어있는 캐시이고, index와 tag를 통해 set selection을 수행한다. single line cache라 set selection 만으로 값은 획득할 수 있고, vpo는 pa를 계산하기위해 쓰인다.
 - 순서는 cpu가 가상주소 만들면 -> mmu가 tlb에서 pte 가지고오고 -> pte에서 가상주소 번역한 다음 캐시나 메모리에 피지컬 주소로 저장된 값 요청하고 -> 프로세서(cpu)가 값 획득하고.
+
+### 부록. 사이즈 계산하기
+
+- 먼저 B(바이트), KB, MB, GB 간의 관계를 규명해보자. 첫 스텝은 바이트의 크기를 정의하는 것이다. 1B = 8bit.
+- 1KB = 1024B(엄밀히는 1000B지만 power of 2로 통일.), 1MB = 1024KB, 1GB = 1024MB
+- 즉, KB = 2^10B, MB = 2^20B, GB = 2^30B
