@@ -128,3 +128,22 @@
 - 먼저 B(바이트), KB, MB, GB 간의 관계를 규명해보자. 첫 스텝은 바이트의 크기를 정의하는 것이다. 1B = 8bit.
 - 1KB = 1024B(엄밀히는 1000B지만 power of 2로 통일.), 1MB = 1024KB, 1GB = 1024MB
 - 즉, KB = 2^10B, MB = 2^20B, GB = 2^30B
+
+### multi level page table
+
+- 32비트 주소를 사용하는 경우를 생각해보자. 한 페이지가 4KB를 가진다고 가정하면 우리는 PTE를 위해서만 4MB를 써야한다. 페이지가 4KB = 2^12이고, 2^32 / 2^12 -> 2^20인데, 주소 자체가 4B이므로 2^22 = 4MB가 필요. 매번 들고 있기에는 너무 부담스럽다.
+- 그래서 시스템에서는 multi level page table을 사용.
+  - 단순한 pte에서는 pte에서 virtual page -> physical page를 바로 매핑해지만, multi page에서는 page index가 다른 page table로 가게 해준다.
+  - 이때 주목해야할 성질은, 한 pte에 속해있는 모든 vp가 unallocated일 경우 해당 pte는 null로 표현된다.
+- 이게 왜 좋은가? "모든 page를 다 들고 있을 필요가 없도록"해주기 때문. null로 표현되는 pte는 들고 있을 필요가 없고, 우리는 필요한 pte만을 메인 메모리에 들고 있을 수 있다.
+
+### 개념 정정
+
+- pte(page table entry)는 `page table` 자료구조 자체가 아닌, vp의 상태를 추적하는 것으로 보아야 한다. 쉽게 표현하자면 하나의 vp에 대한 pp mapping으로 볼 수 있다. 단 unallocated인 경우도 있으므로, 해당 상황까지 고려한다면 한 vp에 대한 상태 추적으로 보는 것이 더 적절함.
+
+### 통합 정리: end-to-end address translation
+
+- TLB(translation lookaside buffer)이 왜 필요한지, 그리고 어떻게 동작하는지 살펴보자면,
+  - VPN으로 "PTE/ PPN을 정석으로" 찾는 방법을 생각해보자. VPN이 있으면 대응하는 page table을 찾고, pte를 찾고 그때야 ppn을 찾을 수 있다. 너무 번거롭고 느림.
+  - 그래서 tlb를 캐시로 사용한다. vpn을 key로 사용하는 형태다. vpn이 8비트이면 앞 6비트는 tag(TLBT)로 뒤 2비트는 set index(TLBI)로 사용한다.
+  - 일반적인 캐시와 동일하게 사용되며, hit하면 PPN 정보를 획득한다. 이러한 이유로 PA를 쉽게 만들 수 있다 [PPN | VPO(=PP0)]
