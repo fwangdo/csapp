@@ -147,3 +147,36 @@
   - VPN으로 "PTE/ PPN을 정석으로" 찾는 방법을 생각해보자. VPN이 있으면 대응하는 page table을 찾고, pte를 찾고 그때야 ppn을 찾을 수 있다. 너무 번거롭고 느림.
   - 그래서 tlb를 캐시로 사용한다. vpn을 key로 사용하는 형태다. vpn이 8비트이면 앞 6비트는 tag(TLBT)로 뒤 2비트는 set index(TLBI)로 사용한다.
   - 일반적인 캐시와 동일하게 사용되며, hit하면 PPN 정보를 획득한다. 이러한 이유로 PA를 쉽게 만들 수 있다 [PPN | VPO(=PP0)]
+
+### 리눅스 가상 메모리 시스템
+
+- 리눅스는 "할당된 가상 메모리"가 존재함. 여러 개의 area(혹은 segment)로 구성되어 있음. 예를 들자면, data segments / code segments / heap 등. 이런 area는 단순한 가상메모리와 구분됨.
+- 이렇게 할당되지 않은 메모리 존재하지 않는 값들은 프로세스에 의해 사용되거나 참조될 수 없음. 커널이 추적하지도 않는다.
+
+### 프로세스와 매핑의 구조
+
+- 리눅스에서는 각 프로세스에 대응되는 메모리 공간을 어떻게 구분할까? 크게 mm_task -> mm_struct -> vm_area_struct -> process virtual memory로 구분된다.
+- 하나의 프로세스는 mm_task의 하나의 구분되는 데이터 구조로 관리된다. task에 대응되는 구분되는 데이터 구조를 이하 mm이라고 칭한다면,
+- mm을 mm_struct에 매핑시킬 수 있고, 이때 매핑되는 값으로 pgd와 mmap이 있다. 여기서 mmap이 vm_area_struct로 매핑을 시켜준다.
+- vm_area_struct는 5개의 요소로 구성되어있고, 현재 가상 주소 공간을 잘 특징짓도록 되어있다. 다섯 개의 요소를 살펴보자면,
+  - fvm_start: 시작지점
+  - vm_end: 종료지점
+  - vm_prot: 포함된 모든 페이지에 대한 read / write 허용 여부.
+  - vm_flags: 해당 영역을 다른 프로세스와 공유하는지, 한 프로세스가 독점하는지 여부.
+  - vm_next: 다음 영역.
+
+## 9.8 memory mapping
+
+- 리눅스는 가상 메모리의 area들을 disk의 object들과 결부짓는 작업을 수행한다. 이걸 memory mapping이라고 하고, 크게 두 가지 종류가 있다.
+  - regular file: 일반적인 파일(e.g., executable file)이 가상 메모리에 올라가는 형태. 연속적으로 위치하고, 페이지 단위로 쪼개져서 올라간다. demand paging 때문에 초기화를 수행하는 순간부터 가상 메모리에 올라가지 않고, 첫 요청이 오는 순간에서야 올라간다.
+  - 익명(anonymous) file: 커널에 의해서 생성되고, 0으로만 채워진(all binary-zeor) 형태로 만들어둠. 추측컨대, 일종의 사전 메모리 확보 작업인 듯.
+  - swap file: 모든 disk 내용을 dram을 둘 수는 없다. dram에 있는 내용을 어느 순간에는 내려야하는데, 동시에 나중에 사용될 수도 있기에 어딘가에는 저장해두어야 함. 이걸 disk에 swpa file이라는 형태로 저장해둔다고 생각하면 된다.
+
+### 9.8.1 shared objects
+
+- 예전에 언급했던 것처럼 c의 표준 라이브러리 같은 걸 생각해보자. 프로세스가 여러 개라고 해서 굳이 여러번 올리는 것보단 한 번 올려서 다양한 프로세스가 사용하도록 하는 것이 효과적이다.
+- 이런 관점에서 등장한 것이 shared object, 반대 개념은 private object. 각각의 특성을 살펴보자면
+  - shared object는 한 프로세스에서 해당 object를 변화(write)시킨 것을 다른 프로세스에서 관찰할 수 있고, 실제 object에도 반영된다.
+  - private object는 정반대. 한 프로세스의 동작이 다른 프로세스에 영향을 끼치지 않고, 실제 오브젝트를 변화시키지도 않는다.
+    - 더 구체적으로, private는 copy-on-write를 한다. 기본적으로 write 전에는 두 프로세스가 공유할 수 있지만 write 요청을 받으면 protection fault를 낸 다음, write가 허용되었다면 copy를 하고 copy한 곳에서 write를 하도록 한다.
+    - 여기서 조심해야할 것은 cow(copy-on-write)는 "파일을 복사"하는 것이 아니라 페이지를 복사하는 것이라는 거다.
