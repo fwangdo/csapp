@@ -247,3 +247,12 @@
   - 헤더만 있으면 알 수가 없고, 전체 자료구조를 다 순회하는 방법밖에 없음. 이러면 free가 선형적으로 시간이 들 수밖에 없음.
 - 아이디어: footer를 등록하자. header와 동일한 내용을 블록의 맨 마지막에 위치시키기.
   - 뭐가 좋은가? 현재 노드 입장에서도 이전 노드의 정보(할당 여부 등)를 바로 파악할 수 있음. 자기 노드 바로 위에 footer가 있으니까.
+
+### Explicit Free List
+
+- Implicit free list는 할당(allocation)에 시간이 선형적으로 들기 때문에 썩 좋지는 않음. 물론 힙 크기 자체가 작으면 쓸법도 하지만.
+- Explicit Free list는 이 문제를 doulbly linked-list(노드에 pred / succ 존재)를 사용하는 것으로 해결한다.
+  - 구체적인 아이디어? free된 블록은 payload에 "pred / succ를 기록해두고, 그 pred / succ는 free된 것으로 구성되도록" 구현한다.
+  - free의 head는 별도로 둔다. 이렇게 되면 free 된 애들만 따로 두기 때문에 first fit을 하는 implicit free list보다 훨씬 탐색 비용이 싸다. 단점은 포인터를 저장해야하는 비용이 있다는 것.
+- Implicit Free list와 비교하면, 전체 노드 탐색 -> free 노드만 탐색으로 줄었지만 여전히 선형적이다. 여기서 어떤 정책(policy)을 고려하는지에 따라, 상수타임으로 줄일 수도 있다.
+  - LIFO를 고려해보자. free할 때 free list의 헤드 뒤에 방금 free된 애를 바로 연결하는 경우. free는 당연히 O(1), coaslscing도 bondary tag가 존재하면 O(1).
