@@ -256,3 +256,35 @@
   - free의 head는 별도로 둔다. 이렇게 되면 free 된 애들만 따로 두기 때문에 first fit을 하는 implicit free list보다 훨씬 탐색 비용이 싸다. 단점은 포인터를 저장해야하는 비용이 있다는 것.
 - Implicit Free list와 비교하면, 전체 노드 탐색 -> free 노드만 탐색으로 줄었지만 여전히 선형적이다. 여기서 어떤 정책(policy)을 고려하는지에 따라, 상수타임으로 줄일 수도 있다.
   - LIFO를 고려해보자. free할 때 free list의 헤드 뒤에 방금 free된 애를 바로 연결하는 경우. free는 당연히 O(1), coaslscing도 bondary tag가 존재하면 O(1).
+
+### Segregated Free Lists
+
+- 지금까지의 free lists의 문제점? free를 하려면 항상 선형시간이 든다.
+- 하지만 size 별로 리스트를 다르게 관리하면 어떨까? 예를 들어 power of 2로 한다면? 1, 2, [3,4], [4, 8]... 어느정도 정렬되어 있는 상태이므로 훨씬 더 빠르게 필요한 리스트에 접근할 수 있다.
+- 이 방법도 두 가지 종류가 있는데, simple segregated storage와 segregated fits로 구분된다.
+
+### simple segregated storage
+
+- 한 set의 range가 [17, 32]라고 치자. 해당 자료구조는 set에 32 size의 메모리만 있도록 구성.
+- 만약 필요한데 없다? os한테 메모리 요청하고, page만큼 받아오면 set의 크기만큼(여기서는 32) 잘라서 넣는다.
+- split도 coalescing도 없다. 오직 그 크기 그대로 사용함.
+- 장/단점이 직관적임. 장점? 빠르고 구현이 쉬움. 단점? fragmentation에 매우 취약함.
+
+### segregated fits
+
+- 이건 여전히 doubly linked free list를 사용한다.
+- 할당할 메모리 공간을 찾을 때, 적합한 노드를 찾았으면 (필요시) 찢고, 남은 조각은 free list에 저장해둔다.
+- 만약 못 찾으면 os에 요청하고, 필요한 공간을 할당한 다음, 남은 공간은 찢어서 free list에 저장해둔다.
+- 현실에서 자주 사용되는 방법론이라고 함.
+
+### Buddy systems
+
+- segregated fits의 specialized case. 방법론 중 하나임.
+- set의 구성은 power of 2이다.
+- 총 m개의 비트가 존재하는 공간(2^m)에서 할당하기 위한 2^k 메모리를 찾는다고 하자.
+  - 첫 번째 스텝은 k보다 큰 j를 찾는 것이다(2^j).
+  - 두번째는 1/2로 쪼개고 남은 반쪽은 2^(j-1)을 저장하는 공간에 저장하는 것이다.
+  - 계속 쪼개다가 2^k를 찾으면 스탑한다.
+  - free 시에는 반대로, buddy도 free라면 둘을 합쳐 2^(k+1) block을 만들고 계속 반복한다.단, allocated buddy를 만나면 멈춘다.
+- 하나 재밌는 성질은 coalescing할 때 더해야할 두 수가 주소상 딱 하나의 비트만 다르다는 것. 생각해보면 당연함. 32비트 A가 있을 때 이와 더해야할 32비트 B는 A로부터 32비트 떨어져있을 것이므로. (0부터 인덱스를 셌을 때), 다섯 번째 자리가 0이면 1, 1이면 0. 이래서 buddy임.
+- 재밌는 구현이지만 power of 2쓰니까 fragmentation은 안 좋다.
