@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
   dup2(1, 2);
 
   /* Parse the command line */
-  while ((c = getopt(argc, argv, "hvp")) != EOF) {
+  while ((c = getopt(argc, argv, "hvp")) != EOF) { // hvp?
     switch (c) {
     case 'h': /* print help message */
       usage();
