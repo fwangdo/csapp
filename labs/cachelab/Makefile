@@ -4,6 +4,7 @@
 #
 CC = gcc
 CFLAGS = -g -Wall -Werror -std=c99 -m64
+PYTHON ?= python3
 
 all: csim test-trans tracegen
 	# Generate a handin tar file each time you compile
@@ -31,3 +32,15 @@ clean:
 	rm -f test-trans tracegen
 	rm -f trace.all trace.f*
 	rm -f .csim_results .marker
+
+# Native development tools; the original Linux grading targets stay available.
+.PHONY: all clean check-native-tools test-native-a test-native-b
+
+check-native-tools:
+	$(PYTHON) -m unittest discover -s tools -p test_native_tools.py -v
+
+test-native-a: csim
+	$(PYTHON) tools/test_native.py csim
+
+test-native-b:
+	$(PYTHON) tools/test_native.py trans
