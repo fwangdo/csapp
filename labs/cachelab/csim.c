@@ -2,7 +2,8 @@
 #include "inttypes.h"
 #include "stdint.h"
 #include "stdio.h"
-#include <stdint.h>
+#include "stdlib.h"
+#include "unistd.h"
 
 // stats
 int hits;
@@ -18,6 +19,46 @@ void simulate(char sig, uint64_t address, int size) {}
 
 int main(int argc, char *argv[]) {
   // TODO -s -E -b -t parsing
+  int s = -1;
+  int E = -1;
+  int b = -1;
+  char *trace_path = NULL;
+  int verbose = 0;
+
+  int opt;
+
+  while ((opt = getopt(argc, argv, "s:E:b:t:vh")) != -1) {
+    switch (opt) {
+    case 's':
+      s = atoi(optarg);
+      break;
+    case 'E':
+      E = atoi(optarg);
+      break;
+    case 'b':
+      b = atoi(optarg);
+      break;
+    case 't':
+      trace_path = optarg;
+      break;
+    case 'v':
+      verbose = 1;
+      break;
+    case 'h':
+      printf("Usage: %s -s <s> -E <E> -b <b> -t <trace>\n", argv[0]);
+      return 0;
+    default:
+      return 1;
+    }
+  }
+
+  if (s <= 0 || E <= 0 || b <= 0 || trace_path == NULL) {
+    fprintf(stderr, "Invalid or missing arguments\n");
+    return 1;
+  }
+
+  printf("s=%d E=%d b=%d trace=%s verbose=%d\n", s, E, b, trace_path, verbose);
+
   // simulation을 위한 자료구조 초기화.
 
   // file.
