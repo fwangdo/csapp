@@ -1,31 +1,51 @@
 #include "cachelab.h"
+#include "inttypes.h"
+#include "stdint.h"
+#include "stdio.h"
+#include <stdint.h>
 
 // stats
 int hits;
 int misses;
 int evictions;
 
+char *trace_path;
+
 // structures
 
-char parse_char(char *line) {}
-
-int parse_left(char *line) {}
-
-int parse_right(char *line) {}
-
-void simulate(char sig, int left, int right) {}
+// funcs. TO-DO.
+void simulate(char sig, uint64_t address, int size) {}
 
 int main(int argc, char *argv[]) {
-  // while loop.
-  while (1) {
-    char *line = get_line();
-    // line.
-    char sig = parse_char(line);
-    int left = parse_left(line);
-    int right = parse_right(line);
+  // TODO -s -E -b -t parsing
+  // simulation을 위한 자료구조 초기화.
 
-    simulate(sig, left, right);
+  // file.
+  FILE *fp = fopen(trace_path, "r");
+  if (!fp) {
+    perror("fopen");
+    return 1;
   }
+
+  char line[256];
+
+  // while loop.
+  while (fgets(line, sizeof(line), fp) != NULL) {
+    char sig;
+    uint64_t address;
+    int size;
+
+    if (sscanf(line, " %c %" SCNx64 ",%d", &sig, &address, &size) != 3) {
+      continue;
+    }
+
+    if (sig == 'I')
+      continue;
+
+    simulate(sig, address, size);
+  }
+
+  fclose(fp);
 
   printSummary(hits, misses, evictions);
   return 0;
