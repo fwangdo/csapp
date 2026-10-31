@@ -2,8 +2,13 @@
 #include "inttypes.h"
 #include "stdint.h"
 #include "stdio.h"
-#include "stdlib.h"
-#include "unistd.h"
+#include <getopt.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 // stats
 int hits;
@@ -12,22 +17,95 @@ int evictions;
 
 char *trace_path;
 
+// memory bits
+int M = 64;
+int t;
+
+int cur_set_idx = 0;
+int cur_line_idx = 0;
+
 // structures
 typedef struct line {
-  short valid;
-  int tag;     // TODO: select proper data type.
-  int block[]; // TODO
+  bool valid; // need bull
+  uint64_t tag;
+  int used;
 } line_t;
 
 typedef struct set {
   int set_idx;
-  line_t lines[];
+  line_t *lines;
 } set_t;
 
-set_t cache[30];
+set_t *cache;
 
 // funcs. TO-DO.
-void simulate(char sig, uint64_t address, int size) {}
+bool initialize(int s, int E, int b) {
+  size_t S = (size_t)1 << s;
+
+  cache = malloc(S * sizeof(*cache));
+
+  if (cache == NULL) {
+    perror("malloc");
+    return false;
+  }
+
+  // set.
+  for (int i = 0; i < S; i++) {
+    cache[i].set_idx = (int)i;
+
+    // line..
+    cache[i].lines = calloc(E, sizeof(*cache[i].lines));
+
+    if (cache[i].lines == NULL) {
+      perror("calloc");
+
+      // 지금까지 성공한 할당만 해제
+      for (size_t j = 0; j < i; j++) {
+        free(cache[j].lines);
+      }
+
+      free(cache);
+      cache = NULL;
+      return false;
+    }
+  }
+
+  return true;
+};
+
+void destory(int s, int E) {
+  size_t S = (size_t)1 << s;
+  for (int i = 0; i < S; i++) {
+    free(cache[i].lines);
+  }
+  free(cache);
+  cache = NULL;
+};
+
+int get_set_index(uint64_t address) {
+
+};
+uint64_t get_tag_index(uint64_t address) {
+
+};
+
+void do_load();
+void do_store();
+void do_modify();
+void simulate(char sig, uint64_t address, int size) {
+  switch (sig) {
+  case 'I':
+    return;
+  case 'L':
+    do_load();
+  case 'S':
+    do_store();
+  case 'M':
+    do_modify();
+  default:
+    return;
+  }
+};
 
 int main(int argc, char *argv[]) {
   // TODO -s -E -b -t parsing
@@ -80,15 +158,19 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  char line[256];
+  char input_line[256];
+  t -= (s + b);
+
+  // initialize.
+  initialize(s, E, b);
 
   // while loop.
-  while (fgets(line, sizeof(line), fp) != NULL) {
+  while (fgets(input_line, sizeof(input_line), fp) != NULL) {
     char sig;
     uint64_t address;
     int size;
 
-    if (sscanf(line, " %c %" SCNx64 ",%d", &sig, &address, &size) != 3) {
+    if (sscanf(input_line, " %c %" SCNx64 ",%d", &sig, &address, &size) != 3) {
       continue;
     }
 
@@ -101,5 +183,9 @@ int main(int argc, char *argv[]) {
   fclose(fp);
 
   printSummary(hits, misses, evictions);
+
+  // destory.
+  destory(s, E);
+
   return 0;
 }
