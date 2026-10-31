@@ -13,6 +13,18 @@ int evictions;
 char *trace_path;
 
 // structures
+typedef struct line {
+  short valid;
+  int tag;     // TODO: select proper data type.
+  int block[]; // TODO
+} line_t;
+
+typedef struct set {
+  int set_idx;
+  line_t lines[];
+} set_t;
+
+set_t cache[30];
 
 // funcs. TO-DO.
 void simulate(char sig, uint64_t address, int size) {}

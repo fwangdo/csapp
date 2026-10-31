@@ -38,6 +38,10 @@
   - 먼저 언제 miss가 발생하는가? set을 찾았다. valid bit가 0이거나, tag가 다르거나. 이러면 miss.
   - 그럼 어떤 애를 지우고(eviction), 다시 써야하나? 답은 명확. 바로 그자리(set index가 일치하는!)
 
+### 6.4.3 set-associative caches
+
+-
+
 # Part B
 
 ## summary of section 6.5 / 6.6
