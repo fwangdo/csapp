@@ -15,14 +15,15 @@ int hits;
 int misses;
 int evictions;
 
+int s = -1;
+int E = -1;
+int b = -1;
+
 char *trace_path;
 
 // memory bits
 int M = 64;
 int t;
-
-int cur_set_idx = 0;
-int cur_line_idx = 0;
 
 // structures
 typedef struct line {
@@ -82,26 +83,41 @@ void destory(int s, int E) {
   cache = NULL;
 };
 
-int get_set_index(uint64_t address) {
+uint64_t get_set_index(uint64_t address) {
+  // t / s / b
+  uint64_t b_bit = ((uint64_t)1 << b) - 1;
+  uint64_t s_bit = ((uint64_t)1 << (s + b)) - 1;
+  uint64_t only_s = s_bit - b_bit;
+  return (address & only_s) >> b;
+};
+uint64_t get_tag_index(uint64_t address) { return address >> (s + b); };
+
+void do_load(uint64_t set_idx, uint64_t tag_idx) {
+  for (int i = 0; i < E; i++) {
+  }
+};
+void do_store(uint64_t set_idx, uint64_t tag_idx) {
 
 };
-uint64_t get_tag_index(uint64_t address) {
+void do_modify(uint64_t set_idx, uint64_t tag_idx) {
 
 };
-
-void do_load();
-void do_store();
-void do_modify();
 void simulate(char sig, uint64_t address, int size) {
+  uint64_t set_idx = get_set_index(address);
+  uint64_t tag_idx = get_tag_index(address);
+
   switch (sig) {
   case 'I':
     return;
   case 'L':
-    do_load();
+    do_load(set_idx, tag_idx);
+    return;
   case 'S':
-    do_store();
+    do_store(set_idx, tag_idx);
+    return;
   case 'M':
-    do_modify();
+    do_modify(set_idx, tag_idx);
+    return;
   default:
     return;
   }
@@ -109,9 +125,7 @@ void simulate(char sig, uint64_t address, int size) {
 
 int main(int argc, char *argv[]) {
   // TODO -s -E -b -t parsing
-  int s = -1;
-  int E = -1;
-  int b = -1;
+
   char *trace_path = NULL;
   int verbose = 0;
 
