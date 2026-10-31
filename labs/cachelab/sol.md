@@ -66,7 +66,30 @@
 
 ### 6.4.4. fully associative caches
 
-- 이제 direct mapped caches에 대척점에 있는 캐시임. set g하나.
+- 이제 direct mapped caches에 대척점에 있는 캐시임. set이 하나. set selection은 생각할 필요가 없음.
+- 그럼 line matching은?set associative cacheㅎ가 똑같다. valid bit / tag 잘보고 offset 가져오면 됨.
+- 근데 라인 여러 개 확인하는 것 자체가 시간 대비 효율이 좋은 건 아님.
+
+### Write 관련 이슈?
+
+- write가 문제가 되는 경우를 생각해보자. 예를 들어 cache write를 했는데, 그 메모리 주소를 변경해야하는 경우다. 이를 write-hit이라고 함. 예제를 보자.
+
+```c
+int x = 1;
+int y = x; 
+y = 20; 
+```
+
+- y의 assignment에서 x는 이미 캐시에 있지만, 캐시에 있는 값을 20으로 재변경해야함. 문제는 이걸 더 아래 메모리(여기서는 dram)에 내릴 것인가 말것인가.
+- 첫 번째 방법은 write-back으로 캐시도 바꾸고 메인 메모리도 바꾸고. 직관적이지만 비쌈.
+- 두 번째 방법은 write-through. 트래픽을 매우 줄이지만 복잡함. dirty bit 도입해야.
+
+- 반대로 write miss를 보자. hit의 반대니까 써야할 메모리가 캐시에 없는 경우를 의미하게 된다.
+- wirte-allocate: dram에서 메모리를 가져온 뒤에 캐시에서 바꿀 부분만 바꾼다.
+  - Q. 왜 그렇게 해야하나? 안 가져오고 cache만 쓰면 되지않나?
+  - A. 그럼 일부만 바뀌면 해결 못함.
+- no-write-allocate: 그냥 dram에다가 써버림.
+- write-through는 no-write-allocate랑, write-back은 write-allocate랑 어울려서 사용된다고 한다.
 
 # Part B
 
