@@ -19,6 +19,8 @@ int s = -1;
 int E = -1;
 int b = -1;
 
+int cur_idx = 0;
+
 char *trace_path;
 
 // memory bits
@@ -93,8 +95,36 @@ uint64_t get_set_index(uint64_t address) {
 uint64_t get_tag_index(uint64_t address) { return address >> (s + b); };
 
 void do_load(uint64_t set_idx, uint64_t tag_idx) {
+  uint64_t mn = 1e10;
+  int mn_idx = -1;
+  int no_valid_bit = -1;
+
   for (int i = 0; i < E; i++) {
+    line_t cur_line = cache[set_idx].lines[i];
+    if (cur_line.valid && (cur_line.tag == tag_idx)) {
+      // todo: handle invalid case.
+      hits++;
+      cache[set_idx].lines[i].used = cur_idx;
+      return;
+    }
+
+    if (!cur_line.valid) {
+      no_valid_bit = i;
+    }
+
+    if (mn > cur_line.used) {
+      mn = cur_line.used;
+      mn_idx = i;
+    }
   }
+
+  misses++;
+  cache[set_idx].lines[mn_idx].used = cur_idx;
+  cache[set_idx].lines[mn_idx].valid = true;
+  if (no_valid_bit != -1)
+    cache[set_idx].lines[no_valid_bit].tag = tag_idx;
+  else
+    cache[set_idx].lines[mn_idx].tag = tag_idx;
 };
 void do_store(uint64_t set_idx, uint64_t tag_idx) {
 
@@ -192,6 +222,7 @@ int main(int argc, char *argv[]) {
       continue;
 
     simulate(sig, address, size);
+    cur_idx++;
   }
 
   fclose(fp);
