@@ -124,7 +124,6 @@ void do_load(uint64_t set_idx, uint64_t tag_idx) {
   }
 
   misses++;
-
   if (no_valid_bit != -1) {
     cache[set_idx].lines[no_valid_bit].tag = tag_idx;
     cache[set_idx].lines[no_valid_bit].used = cur_idx;
@@ -133,6 +132,7 @@ void do_load(uint64_t set_idx, uint64_t tag_idx) {
     cache[set_idx].lines[mn_idx].tag = tag_idx;
     cache[set_idx].lines[mn_idx].used = cur_idx;
     cache[set_idx].lines[mn_idx].valid = true;
+    evictions++;
   }
 };
 void do_store(uint64_t set_idx, uint64_t tag_idx) {
