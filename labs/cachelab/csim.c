@@ -101,11 +101,16 @@ void do_load(uint64_t set_idx, uint64_t tag_idx) {
 
   for (int i = 0; i < E; i++) {
     line_t cur_line = cache[set_idx].lines[i];
-    if (cur_line.valid && (cur_line.tag == tag_idx)) {
+    if (cur_line.tag == tag_idx) {
       // todo: handle invalid case.
-      hits++;
-      cache[set_idx].lines[i].used = cur_idx;
-      return;
+      if (cur_line.valid) {
+        hits++;
+        cache[set_idx].lines[i].used = cur_idx;
+        return;
+      } else {
+        no_valid_bit = i;
+        break;
+      }
     }
 
     if (!cur_line.valid) {
@@ -119,12 +124,16 @@ void do_load(uint64_t set_idx, uint64_t tag_idx) {
   }
 
   misses++;
-  cache[set_idx].lines[mn_idx].used = cur_idx;
-  cache[set_idx].lines[mn_idx].valid = true;
-  if (no_valid_bit != -1)
+
+  if (no_valid_bit != -1) {
     cache[set_idx].lines[no_valid_bit].tag = tag_idx;
-  else
+    cache[set_idx].lines[no_valid_bit].used = cur_idx;
+    cache[set_idx].lines[no_valid_bit].valid = true;
+  } else {
     cache[set_idx].lines[mn_idx].tag = tag_idx;
+    cache[set_idx].lines[mn_idx].used = cur_idx;
+    cache[set_idx].lines[mn_idx].valid = true;
+  }
 };
 void do_store(uint64_t set_idx, uint64_t tag_idx) {
 
