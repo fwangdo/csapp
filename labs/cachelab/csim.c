@@ -101,16 +101,10 @@ void do_load(uint64_t set_idx, uint64_t tag_idx) {
 
   for (int i = 0; i < E; i++) {
     line_t cur_line = cache[set_idx].lines[i];
-    if (cur_line.tag == tag_idx) {
-      // todo: handle invalid case.
-      if (cur_line.valid) {
-        hits++;
-        cache[set_idx].lines[i].used = cur_idx;
-        return;
-      } else {
-        no_valid_bit = i;
-        break;
-      }
+    if (cur_line.tag == tag_idx && cur_line.valid) {
+      hits++;
+      cache[set_idx].lines[i].used = cur_idx;
+      return;
     }
 
     if (!cur_line.valid) {
