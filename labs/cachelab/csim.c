@@ -165,7 +165,8 @@ void do_store(uint64_t set_idx, uint64_t tag_idx) {
   }
 };
 void do_modify(uint64_t set_idx, uint64_t tag_idx) {
-
+  do_load(set_idx, tag_idx);
+  do_store(set_idx, tag_idx);
 };
 void simulate(char sig, uint64_t address, int size) {
   uint64_t set_idx = get_set_index(address);

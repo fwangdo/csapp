@@ -15,6 +15,28 @@ make check-native-tools
 
 ## Part A
 
+프로젝트 루트에서 아래 명령 하나로 `csim` 빌드와 C/Python differential
+testing을 실행할 수 있습니다. Python 3와 C 컴파일러, `make`가 필요합니다.
+
+```sh
+python3 ./diff_test.py
+```
+
+공개 trace 8개, 경계 사례 6개, 6가지 캐시 설정마다 무작위 trace 20개로
+기본 134개 사례를 비교합니다. hits/misses/evictions 출력과 `.csim_results`를
+검사하며, 임시 작업 폴더를 사용하므로 루트의 `.csim_results`는 보존됩니다.
+모두 통과하면 종료 코드 0, 비교 실패는 1, 빌드나 실행 준비 오류는 2입니다.
+
+```sh
+python3 ./diff_test.py --seed 100 --random-cases 100 --fail-fast
+python3 ./diff_test.py --binary ./csim
+```
+
+`--binary`를 지정하면 빌드를 생략하고 해당 실행 파일을 검사합니다.
+`csim.c`를 포함한 제출 소스는 변경하지 않습니다.
+
+기존의 짧은 테스트 명령도 사용할 수 있습니다.
+
 ```sh
 make test-native-a
 ```
