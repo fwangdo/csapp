@@ -130,7 +130,39 @@ void do_load(uint64_t set_idx, uint64_t tag_idx) {
   }
 };
 void do_store(uint64_t set_idx, uint64_t tag_idx) {
+  uint64_t mn = 1e10;
+  int mn_idx = -1;
+  int no_valid_bit = -1;
 
+  for (int i = 0; i < E; i++) {
+    line_t cur_line = cache[set_idx].lines[i];
+    if (cur_line.tag == tag_idx && cur_line.valid) {
+      hits++;
+      cache[set_idx].lines[i].used = cur_idx;
+      return;
+    }
+
+    if (!cur_line.valid) {
+      no_valid_bit = i;
+    }
+
+    if (mn > cur_line.used) {
+      mn = cur_line.used;
+      mn_idx = i;
+    }
+  }
+
+  misses++;
+  if (no_valid_bit != -1) {
+    cache[set_idx].lines[no_valid_bit].tag = tag_idx;
+    cache[set_idx].lines[no_valid_bit].used = cur_idx;
+    cache[set_idx].lines[no_valid_bit].valid = true;
+  } else {
+    cache[set_idx].lines[mn_idx].tag = tag_idx;
+    cache[set_idx].lines[mn_idx].used = cur_idx;
+    cache[set_idx].lines[mn_idx].valid = true;
+    evictions++;
+  }
 };
 void do_modify(uint64_t set_idx, uint64_t tag_idx) {
 
