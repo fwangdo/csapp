@@ -93,4 +93,8 @@ y = 20;
 
 # Part B
 
-## summary of section 6.5 / 6.6
+### 6.5. Writing cache-friendly code
+
+- 캐시-friendly하게 코드를 작성하려면 크게 두 가지가 있다고 한다.
+  - 1. hot-path를 최적화하라. 많이 사용되는 지점(e.g., inner loop)을 최적화하는 게 좋음
+  - 1. 모든 조건이 다 동일하다면 loop에서 miss를 줄이는 게 좋다.
