@@ -181,7 +181,7 @@ def test_trans(args):
     return 0 if passed == total else 1
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     part_a = commands.add_parser("csim", help="compare csim with public fixtures and independent oracle")
@@ -194,15 +194,26 @@ def main():
     part_b.add_argument("--source", type=Path, default=ROOT / "trans.c")
     part_b.add_argument("--clang", default="clang")
     part_b.add_argument("--function", type=int, default=0)
-    part_b.add_argument("--sizes", nargs="+", default=["32x32", "64x64", "61x67"])
+    part_b.add_argument("--sizes", nargs="+", help="MxN sizes (default: 32x32 64x64 61x67)")
+    part_b.add_argument("-M", type=int, help="input columns; requires -N")
+    part_b.add_argument("-N", type=int, help="input rows; requires -M")
     part_b.add_argument("--trials", type=int, default=3)
     part_b.add_argument("--seed", type=int, default=1)
     part_b.add_argument("--b-offset", type=lambda x: int(x, 0), default=262144)
     part_b.add_argument("--trace-dir", type=Path, help="keep traces for oracle -v debugging")
     part_b.set_defaults(run=test_trans)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.command == "csim" and args.random_cases < 0:
         parser.error("random-cases must be >= 0")
+    if args.command == "trans":
+        if (args.M is None) != (args.N is None):
+            parser.error("-M and -N must be supplied together")
+        if args.M is not None:
+            if args.sizes is not None:
+                parser.error("use either -M/-N or --sizes")
+            args.sizes = [f"{args.M}x{args.N}"]
+        elif args.sizes is None:
+            args.sizes = ["32x32", "64x64", "61x67"]
     try:
         return args.run(args)
     except (OSError, ValueError, subprocess.SubprocessError) as error:

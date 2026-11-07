@@ -43,4 +43,4 @@ test-native-a: csim
 	$(PYTHON) tools/test_native.py csim
 
 test-native-b:
-	$(PYTHON) tools/test_native.py trans
+	$(PYTHON) test_trans.py

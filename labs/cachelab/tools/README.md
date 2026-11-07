@@ -72,16 +72,37 @@ oracle은 `csim.c`를 호출하거나 그 구현을 재사용하지 않습니다
 
 ## Part B
 
+`trans.c`를 수정한 뒤 프로젝트 루트에서 다음 명령을 실행합니다.
+매번 현재 소스를 ARM 네이티브로 빌드하고 정확성과 hits/misses/evictions를
+출력합니다. `make`를 먼저 실행할 필요는 없습니다.
+
+```sh
+python3 ./test_trans.py
+```
+
+특정 크기만 검사하려면 `-M`(입력 열 수), `-N`(입력 행 수)을 함께 지정합니다.
+
+```sh
+python3 ./test_trans.py -M 32 -N 32
+python3 ./test_trans.py -M 64 -N 64
+python3 ./test_trans.py -M 61 -N 67
+```
+
+아래 명령도 같은 테스트를 실행합니다.
+
 ```sh
 make test-native-b
 ```
 
 기본값은 등록된 함수 0번, `M x N = 32x32, 64x64, 61x67`, 각 크기당
 서로 다른 입력 3개입니다. 제공된 기본 전치 함수는 현재 1번입니다.
+`PASS`/`FAIL`은 전치 결과의 정확성을 뜻하며, 성능 기준 통과 여부는 아닙니다.
+아직 비어 있는 제출 함수로 실행하면 `FAIL`이 나오는 것이 정상입니다.
+종료 코드는 전체 성공 0, 검사 실패 1, 빌드/실행 준비 오류 2입니다.
 
 ```sh
-python3 tools/test_native.py trans --function 1
-python3 tools/test_native.py trans --sizes 1x1 7x9 31x33 --trials 5
+python3 ./test_trans.py --function 1
+python3 ./test_trans.py --sizes 1x1 7x9 31x33 --trials 5
 ```
 
 Clang이 `trans.c`의 메모리 읽기/쓰기 앞에 기록 함수를 자동으로 삽입합니다.

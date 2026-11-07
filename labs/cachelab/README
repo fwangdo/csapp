@@ -1,5 +1,13 @@
 This is the handout directory for the CS:APP Cache Lab. 
 
+Native macOS / Apple Silicon transpose test:
+    python3 ./test_trans.py
+    python3 ./test_trans.py -M 32 -N 32
+
+This builds trans.c and checks correctness and modeled cache statistics.
+No x86 binaries or Valgrind are required. See tools/README.md for details;
+the modeled miss counts are not official grading results.
+
 ************************
 Running the autograders:
 ************************
