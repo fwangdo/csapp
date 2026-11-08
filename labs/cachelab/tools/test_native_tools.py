@@ -3,6 +3,8 @@
 import io
 import itertools
 from pathlib import Path
+import re
+import subprocess
 import tempfile
 import unittest
 
@@ -88,7 +90,7 @@ static void out_of_bounds(int M, int N, int A[N][M], int B[M][N]) {
     p[(size_t)M * N] = 1;
 }
 void registerFunctions(void) {
-    registerTransFunction(baseline, "baseline");
+    registerTransFunction(baseline, "Transpose submission");
     registerTransFunction(empty, "empty");
     registerTransFunction(corrupt_a, "corrupt A");
     registerTransFunction(out_of_bounds, "out of bounds");
@@ -105,6 +107,14 @@ class NativeTracingChecks(unittest.TestCase):
         source = cls.directory / "fixture.c"
         source.write_text(FIXTURE)
         cls.executable = build_trans(cls.directory, source, "clang")
+        cls.native_cli = cls.directory / "test-trans"
+        subprocess.run([
+            "clang", "-std=c99", "-g", "-O0", "-Wall", "-Werror",
+            "-fsanitize=address", "-DNATIVE_TRANS_LIBRARY", "-I", str(ROOT),
+            str(ROOT / "tools/native_test_trans.c"),
+            str(ROOT / "tools/native_trans.c"), str(ROOT / "cachelab.c"),
+            str(cls.directory / "trans.o"), "-o", str(cls.native_cli),
+        ], check=True, timeout=60)
 
     def run_fixture(self, fn, M=7, N=9):
         trace = self.directory / "fixture.trace"
@@ -146,6 +156,54 @@ class NativeTracingChecks(unittest.TestCase):
         (ok, detail, _), _ = self.run_fixture(100)
         self.assertFalse(ok)
         self.assertIn("not registered", detail)
+
+    def run_cli(self, *arguments):
+        return subprocess.run([str(self.native_cli), *map(str, arguments)],
+                              cwd=self.directory, capture_output=True,
+                              text=True, timeout=20)
+
+    def test_native_cli_cache_counts_match_trace_oracle(self):
+        for M, N in [(1, 1), (7, 9), (32, 32), (64, 64), (61, 67)]:
+            with self.subTest(size=(M, N)):
+                (ok, detail, expected), _ = self.run_fixture(0, M, N)
+                self.assertTrue(ok, detail)
+                result = self.run_cli('-M', M, '-N', N, '-F', 0)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                match = re.search(r'hits:(\d+) misses:(\d+) evictions:(\d+)', result.stdout)
+                self.assertIsNotNone(match, result.stdout)
+                self.assertEqual(tuple(map(int, match.groups())), expected)
+                self.assertIn(f'TEST_TRANS_RESULTS=1:{expected[1]}', result.stdout)
+
+    def test_native_cli_detects_wrong_output_and_input_changes(self):
+        for fn, message in [(1, 'Wrong B['), (2, 'Input matrix A was modified')]:
+            with self.subTest(function=fn):
+                result = self.run_cli('-M', 7, '-N', 9, '-F', fn)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(message, result.stderr)
+                self.assertIn('TEST_TRANS_RESULTS=0:0', result.stdout)
+
+    def test_native_cli_survives_out_of_bounds_function(self):
+        result = self.run_cli('-M', 7, '-N', 9, '-F', 3)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('AddressSanitizer', result.stderr)
+        self.assertIn('TEST_TRANS_RESULTS=0:0', result.stdout)
+
+    def test_native_cli_reports_submission_despite_other_function_failures(self):
+        result = self.run_cli('-M', 7, '-N', 9)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('PASS func 0 (Transpose submission)', result.stdout)
+        self.assertIn('FAIL func 1', result.stdout)
+        self.assertIn('FAIL func 2', result.stdout)
+        self.assertIn('FAIL func 3', result.stdout)
+        self.assertIn('TEST_TRANS_RESULTS=1:37', result.stdout)
+
+    def test_native_cli_validates_arguments(self):
+        for arguments in [[], ['-M', 32], ['-M', 0, '-N', 32],
+                          ['-M', 32, '-N', 257], ['-M', '32oops', '-N', 32],
+                          ['-M', 32, '-N', 32, '-F', -1],
+                          ['-M', 32, '-N', 32, '-F', 100]]:
+            with self.subTest(arguments=arguments):
+                self.assertEqual(self.run_cli(*arguments).returncode, 2)
 
 
 if __name__ == "__main__":

@@ -72,6 +72,31 @@ oracle은 `csim.c`를 호출하거나 그 구현을 재사용하지 않습니다
 
 ## Part B
 
+### macOS 네이티브 실행 파일
+
+기존 테스트 프로그램과 같은 이름과 인자로 실행할 수 있습니다.
+
+```sh
+make test-trans
+./test-trans -M 32 -N 32
+./test-trans -M 64 -N 64
+./test-trans -M 61 -N 67
+```
+
+macOS에서는 `make test-trans`가 현재 `trans.c`를 링크한 ARM 네이티브
+바이너리를 만듭니다. **`trans.c`를 수정하면 `make test-trans`를 다시 실행합니다.**
+Python, Valgrind, `csim-ref` 없이 정확성과 hits/misses/evictions를 출력합니다.
+모든 등록 함수를 각각 독립된 프로세스에서 검사하며, 제출 함수는 공식 도구와
+같이 설명 문자열 `Transpose submission`으로 찾습니다. 특정 함수만 검사하려면
+`./test-trans -M 32 -N 32 -F 1`처럼 지정합니다.
+
+캐시는 아래 Python 도구와 같은 배열 접근 모델입니다. 공식 miss 수나 점수를
+재현하는 도구는 아닙니다. `TEST_TRANS_RESULTS=정확성:miss수`도 출력합니다.
+실패한 제출 함수는 `TEST_TRANS_RESULTS=0:0`과 종료 코드 1을 반환합니다.
+Linux에서는 기존 `test-trans.c`를 빌드하는 공식 경로를 유지합니다.
+
+### Python 실행 도구
+
 `trans.c`를 수정한 뒤 프로젝트 루트에서 다음 명령을 실행합니다.
 매번 현재 소스를 ARM 네이티브로 빌드하고 정확성과 hits/misses/evictions를
 출력합니다. `make`를 먼저 실행할 필요는 없습니다.

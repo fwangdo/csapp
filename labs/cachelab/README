@@ -1,6 +1,16 @@
 This is the handout directory for the CS:APP Cache Lab. 
 
-Native macOS / Apple Silicon transpose test:
+Native macOS / Apple Silicon transpose test (no Valgrind or csim-ref):
+    make test-trans
+    ./test-trans -M 32 -N 32
+    ./test-trans -M 64 -N 64
+    ./test-trans -M 61 -N 67
+
+On macOS, make test-trans builds an ARM-native tester linked to trans.c.
+Run make test-trans again after editing trans.c. Linux retains the original
+official tester. Native miss counts are modeled, not official grading results.
+
+Alternative Python runner (builds automatically and tries multiple inputs):
     python3 ./test_trans.py
     python3 ./test_trans.py -M 32 -N 32
 

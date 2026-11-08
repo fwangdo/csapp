@@ -16,6 +16,9 @@ static size_t matrix_bytes;
 static uint64_t b_base, accesses;
 static FILE *trace;
 static int recording;
+static unsigned char valid[32];
+static uint64_t tags[32];
+static unsigned int hits, misses, evictions;
 
 static void record_access(const void *pointer, unsigned size, char op)
 {
@@ -38,9 +41,19 @@ static void record_access(const void *pointer, unsigned size, char op)
         fprintf(stderr, "Array access crosses its allocation boundary\n");
         exit(2);
     }
-    if (fprintf(trace, " %c %" PRIx64 ",%u\n", op, mapped, size) < 0) {
+    if (trace && fprintf(trace, " %c %" PRIx64 ",%u\n", op, mapped, size) < 0) {
         perror("write trace");
         exit(2);
+    }
+    unsigned int set = (mapped >> 5) & 31;
+    uint64_t tag = mapped >> 10;
+    if (valid[set] && tags[set] == tag) {
+        hits++;
+    } else {
+        misses++;
+        evictions += valid[set];
+        valid[set] = 1;
+        tags[set] = tag;
     }
     accesses++;
 }
@@ -64,22 +77,20 @@ static uint32_t next_random(uint32_t *state)
     return *state;
 }
 
-int main(int argc, char **argv)
+/* registerFunctions() must be called by the caller before running a case. */
+int native_trans_run(int M, int N, int fn, uint32_t seed,
+                     const char *trace_path, uint64_t base)
 {
-    if (argc != 7 || sizeof(int) != 4) {
-        fprintf(stderr, "Usage: native-trans M N function seed trace b-base\n");
+    if (sizeof(int) != 4 || M < 1 || N < 1 || M > 256 || N > 256 || !seed)
         return 2;
-    }
-    int M = atoi(argv[1]), N = atoi(argv[2]), fn = atoi(argv[3]);
-    uint32_t seed = (uint32_t)strtoul(argv[4], NULL, 0);
-    b_base = strtoull(argv[6], NULL, 0);
-    if (M < 1 || N < 1 || M > 256 || N > 256 || !seed)
-        return 2;
-    registerFunctions();
     if (fn < 0 || fn >= func_counter) {
         fprintf(stderr, "Function %d is not registered (count=%d)\n", fn, func_counter);
         return 2;
     }
+    b_base = base;
+    accesses = hits = misses = evictions = 0;
+    memset(valid, 0, sizeof(valid));
+    trace = NULL;
     size_t count = (size_t)M * N;
     matrix_bytes = count * sizeof(int);
     matrix_a = malloc(matrix_bytes);
@@ -87,23 +98,33 @@ int main(int argc, char **argv)
     int *original = malloc(matrix_bytes);
     if (!matrix_a || !matrix_b || !original) {
         fprintf(stderr, "Allocation failed\n");
+        free(original);
+        free(matrix_b);
+        free(matrix_a);
         return 2;
     }
     for (size_t i = 0; i < count; i++) {
         original[i] = matrix_a[i] = (int)(next_random(&seed) & INT_MAX);
         matrix_b[i] = -1; /* Input values are nonnegative: unwritten cells fail. */
     }
-    trace = fopen(argv[5], "w");
-    if (!trace) {
+    if (trace_path)
+        trace = fopen(trace_path, "w");
+    if (trace_path && !trace) {
         perror("open trace");
+        free(original);
+        free(matrix_b);
+        free(matrix_a);
         return 2;
     }
     printf("Function %d: %s\n", fn, func_list[fn].description);
     recording = 1;
     func_list[fn].func_ptr(M, N, (int (*)[M])matrix_a, (int (*)[N])matrix_b);
     recording = 0;
-    if (fclose(trace)) {
+    if (trace && fclose(trace)) {
         perror("close trace");
+        free(original);
+        free(matrix_b);
+        free(matrix_a);
         return 2;
     }
     int correct = 1;
@@ -125,9 +146,27 @@ int main(int argc, char **argv)
         fprintf(stderr, "No array accesses recorded: instrumentation unavailable\n");
         correct = 0;
     }
+    func_list[fn].correct = correct;
+    func_list[fn].num_hits = hits;
+    func_list[fn].num_misses = misses;
+    func_list[fn].num_evictions = evictions;
     printf("NATIVE_TRANS_RESULT correct=%d accesses=%" PRIu64 "\n", correct, accesses);
     free(original);
     free(matrix_b);
     free(matrix_a);
     return correct ? 0 : 1;
 }
+
+#ifndef NATIVE_TRANS_LIBRARY
+int main(int argc, char **argv)
+{
+    if (argc != 7) {
+        fprintf(stderr, "Usage: native-trans M N function seed trace b-base\n");
+        return 2;
+    }
+    registerFunctions();
+    return native_trans_run(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
+                            (uint32_t)strtoul(argv[4], NULL, 0), argv[5],
+                            strtoull(argv[6], NULL, 0));
+}
+#endif
