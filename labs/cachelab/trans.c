@@ -12,7 +12,6 @@
 
 int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 
-// TODO.
 /*
  * transpose_submit - This is the solution transpose function that you
  *     will be graded on for Part B of the assignment. Do not change
@@ -22,24 +21,46 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  */
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
-  // int i, j, tmp;
-  // int t1, t2, t3, t4, t5, t6, t7, t8;
-  // int i = 0;
-  // int j = 0;
-
-  // for (int di = 0; di < 4; di++) {
-  // for (int dj = 0; dj < 4; dj++) {
-  // B[j + dj][i + di] = A[i + di][j + dj];
-  // }
-  // }
-
-  for (int i = 0; i < N; i += 4) {
-    for (int j = 0; j < M; j += 4) {
-      for (int di = 0; di < 4; di++) {
-        for (int dj = 0; dj < 4; dj++) {
-          B[j + dj][i + di] = A[i + di][j + dj];
+  int t0, t1, t2, t3, t4, t5, t6, t7;
+  for (int i = 0; i < N; i += 8) {
+    for (int j = 0; j < M; j += 8) {
+      for (int di = 0; di < 8; di++) {
+        for (int dj = 0; dj < 8; dj++) {
+          if (di == dj) {
+            if (di == 0) {
+              t0 = A[i + di][j + dj];
+            } else if (di == 1) {
+              t1 = A[i + di][j + dj];
+            } else if (di == 2) {
+              t2 = A[i + di][j + dj];
+            } else if (di == 3) {
+              t3 = A[i + di][j + dj];
+            } else if (di == 4) {
+              t4 = A[i + di][j + dj];
+            } else if (di == 5) {
+              t5 = A[i + di][j + dj];
+            } else if (di == 6) {
+              t6 = A[i + di][j + dj];
+            } else if (di == 7) {
+              t7 = A[i + di][j + dj];
+            }
+          } else {
+            B[j + dj][i + di] = A[i + di][j + dj];
+          }
         }
       }
+
+      B[j][i] = t0;
+      B[j + 1][i + 1] = t1;
+      B[j + 2][i + 2] = t2;
+      B[j + 3][i + 3] = t3;
+      B[j + 4][i + 4] = t4;
+      B[j + 5][i + 5] = t5;
+      B[j + 6][i + 6] = t6;
+      B[j + 7][i + 7] = t7;
+      // for (int di = 0; di < 8; di++) {
+      // B[j + di][i + di] = A[i + di][j + di];
+      // }
     }
   }
 }
