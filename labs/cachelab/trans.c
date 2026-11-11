@@ -66,8 +66,8 @@ void transpose_submit_32(int M, int N, int A[N][M], int B[M][N]) {
 }
 
 void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
-  // int t0, t1, t2, t3;
-  // int t4, t5, t6, t7;
+  int t0, t1, t2, t3;
+  int t4, t5, t6, t7;
 
   // A -> 4, 8
   // B -> 8, 4
@@ -86,22 +86,39 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
       }
 
       for (int di = 0; di < 4; di++) {
-        for (int dj = 4; dj < 8; dj++) {
+        for (int dj = 4; dj < 7; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
         }
       }
+      t0 = A[i][j + 7];
+      t1 = A[i + 1][j + 7];
+      t2 = A[i + 2][j + 7];
+      t3 = A[i + 3][j + 7];
 
       for (int di = 4; di < 8; di++) {
-        for (int dj = 4; dj < 8; dj++) {
+        for (int dj = 4; dj < 7; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
         }
       }
+      t4 = A[i + 4][j + 7];
+      t5 = A[i + 5][j + 7];
+      t6 = A[i + 6][j + 7];
+      t7 = A[i + 7][j + 7];
 
       for (int di = 4; di < 8; di++) {
         for (int dj = 0; dj < 4; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
         }
       }
+
+      B[j + 7][0] = t0;
+      B[j + 7][1] = t1;
+      B[j + 7][2] = t2;
+      B[j + 7][3] = t3;
+      B[j + 7][4] = t4;
+      B[j + 7][5] = t5;
+      B[j + 7][6] = t6;
+      B[j + 7][7] = t7;
     }
   }
 }
