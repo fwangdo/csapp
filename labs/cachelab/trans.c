@@ -66,14 +66,15 @@ void transpose_submit_32(int M, int N, int A[N][M], int B[M][N]) {
 }
 
 void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
-  // for (int i = 0; i < N; i++) {
-  // B[i][i] = A[i][i];
-  // }
 
   //
   for (int j = 0; j < M; j += 8) {
     for (int i = 0; i < N - 8; i += 8) {
       //
+      if (i == j) {
+        continue;
+      }
+
       for (int di = 0; di < 4; di++) {
         for (int dj = 0; dj < 4; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
@@ -109,7 +110,10 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
 
   for (int j = 0; j < M; j += 8) {
     for (int i = 56; i < N; i += 8) {
-      //
+      if (i == j) {
+        continue;
+      }
+
       for (int di = 0; di < 4; di++) {
         for (int dj = 0; dj < 4; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
@@ -131,6 +135,74 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
       for (int di = 4; di < 8; di++) {
         for (int dj = 0; dj < 4; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < N; i += 16) {
+    for (int j = 0; j < M; j += 16) {
+      if (i != j) {
+        continue;
+      }
+
+      // 1.
+      for (int di = 0; di < 4; di++) {
+        for (int dj = 0; dj < 4; dj++) {
+          B[j + dj + 8][i + di + 8] = A[i + di][j + dj];
+        }
+      }
+
+      for (int di = 0; di < 4; di++) {
+        for (int dj = 4; dj < 8; dj++) {
+          B[j + dj + 8][i + di + 8] = A[i + di][j + dj];
+        }
+      }
+
+      for (int di = 4; di < 8; di++) {
+        for (int dj = 4; dj < 8; dj++) {
+          B[j + dj + 8][i + di + 8] = A[i + di][j + dj];
+        }
+      }
+
+      for (int di = 4; di < 8; di++) {
+        for (int dj = 0; dj < 4; dj++) {
+          B[j + dj + 8][i + di + 8] = A[i + di][j + dj];
+        }
+      }
+
+      // 2.
+      for (int di = 0; di < 4; di++) {
+        for (int dj = 0; dj < 4; dj++) {
+          B[j + dj][i + di] = A[i + di + 8][j + dj + 8];
+        }
+      }
+
+      for (int di = 0; di < 4; di++) {
+        for (int dj = 4; dj < 8; dj++) {
+          B[j + dj][i + di] = A[i + di + 8][j + dj + 8];
+        }
+      }
+
+      for (int di = 4; di < 8; di++) {
+        for (int dj = 4; dj < 8; dj++) {
+          B[j + dj][i + di] = A[i + di + 8][j + dj + 8];
+        }
+      }
+
+      for (int di = 4; di < 8; di++) {
+        for (int dj = 0; dj < 4; dj++) {
+          B[j + dj][i + di] = A[i + di + 8][j + dj + 8];
+        }
+      }
+
+      // 3. change.
+      int tmp;
+      for (int di = 0; di < 8; di++) {
+        for (int dj = 0; dj < 8; dj++) {
+          tmp = B[i + di][j + dj];
+          B[i + di][j + dj] = B[i + di + 8][j + dj + 8];
+          B[i + di + 8][j + dj + 8] = tmp;
         }
       }
     }
