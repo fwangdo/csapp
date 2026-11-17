@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 from cache_oracle import Cache, records, simulate
-from test_native import (PUBLIC_CASES, ROOT, SMALL_CASES, build_trans,
+from test_native import (DEFAULT_CLANG, PUBLIC_CASES, ROOT, SMALL_CASES, build_trans,
                          random_trace, run_trans)
 
 
@@ -106,10 +106,10 @@ class NativeTracingChecks(unittest.TestCase):
         cls.directory = Path(cls.temporary.name)
         source = cls.directory / "fixture.c"
         source.write_text(FIXTURE)
-        cls.executable = build_trans(cls.directory, source, "clang")
+        cls.executable = build_trans(cls.directory, source, DEFAULT_CLANG)
         cls.native_cli = cls.directory / "test-trans"
         subprocess.run([
-            "clang", "-std=c99", "-g", "-O0", "-Wall", "-Werror",
+            DEFAULT_CLANG, "-std=c99", "-g", "-O0", "-Wall", "-Werror",
             "-fsanitize=address", "-DNATIVE_TRANS_LIBRARY", "-I", str(ROOT),
             str(ROOT / "tools/native_test_trans.c"),
             str(ROOT / "tools/native_trans.c"), str(ROOT / "cachelab.c"),

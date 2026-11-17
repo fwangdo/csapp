@@ -5,9 +5,16 @@
 CC = gcc
 CFLAGS = -g -Wall -Werror -std=c99 -m64
 PYTHON ?= python3
-CLANG ?= clang
 NATIVE_CFLAGS = -g -Wall -Werror -std=c99 -O0 -fsanitize=address -I.
 HOST_OS := $(shell uname -s)
+
+# Apple's driver locates the macOS SDK and sanitizer runtime. A custom clang
+# earlier in PATH may not have either configured. Command-line overrides work.
+ifeq ($(HOST_OS),Darwin)
+CLANG ?= /usr/bin/clang
+else
+CLANG ?= clang
+endif
 
 all: csim test-trans tracegen
 	# Generate a handin tar file each time you compile

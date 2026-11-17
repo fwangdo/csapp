@@ -12,6 +12,7 @@ import tempfile
 from cache_oracle import simulate, summary
 
 ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_CLANG = "/usr/bin/clang" if sys.platform == "darwin" else "clang"
 SUMMARY = re.compile(r"hits:(\d+)\s+misses:(\d+)\s+evictions:(\d+)")
 
 # Public examples from the CS:APP Cache Lab writeup, section 6.1.
@@ -192,7 +193,7 @@ def main(argv=None):
     part_a.set_defaults(run=test_csim)
     part_b = commands.add_parser("trans", help="validate and instrument unmodified trans.c")
     part_b.add_argument("--source", type=Path, default=ROOT / "trans.c")
-    part_b.add_argument("--clang", default="clang")
+    part_b.add_argument("--clang", default=DEFAULT_CLANG)
     part_b.add_argument("--function", type=int, default=0)
     part_b.add_argument("--sizes", nargs="+", help="MxN sizes (default: 32x32 64x64 61x67)")
     part_b.add_argument("-M", type=int, help="input columns; requires -N")

@@ -3,6 +3,14 @@
 Python 3와 Clang만 사용합니다. 별도 패키지를 설치하지 않아도 됩니다.
 `csim.c`, `trans.c`, 제공된 Linux 실행 파일과 공식 채점기는 변경하지 않습니다.
 
+macOS에서는 Makefile과 Python 도구가 기본적으로 Apple Clang
+(`/usr/bin/clang`)을 사용합니다. `PATH` 앞에 있는 직접 빌드한 Clang이 macOS
+SDK를 찾지 못하면 `fatal error: 'stdio.h' file not found`가 발생할 수 있기
+때문입니다. Apple Clang은 설치된 Command Line Tools의 SDK와 sanitizer
+런타임을 찾습니다. 컴파일러를 직접 지정하려면 `make CLANG=/path/to/clang`
+또는 `python3 test_trans.py --clang /path/to/clang`을 사용합니다.
+Linux에서는 기존처럼 `PATH`의 `clang`을 사용합니다.
+
 ## 먼저 도구 자체 검증
 
 ```sh

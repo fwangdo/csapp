@@ -50,3 +50,35 @@ To get a list of the driver flags:
 
 	unix> mdriver -h
 
+*******************************
+Native macOS / ARM64 setup
+*******************************
+Run these commands from this directory:
+
+    make
+    make test
+
+The Makefile builds for the host architecture and stores new object files
+in build/, separately from the original 32-bit ELF objects. Timing uses
+the existing gettimeofday backend; no x86 emulation is needed.
+
+The default test reads all 11 traces in ./traces/ and checks alignment,
+heap bounds, overlapping payloads, and realloc data preservation. It also
+reports space utilization and throughput. A correctness failure produces
+a nonzero exit status. The supplied mm.c is unchanged: its naive allocator
+does not reuse freed blocks and runs out of heap on several full traces.
+
+For a small debugging run:
+
+    ./mdriver -V -f short1-bal.rep
+    ./mdriver -V -f short2-bal.rep
+
+Use the full suite when evaluating your allocator. Scores on tiny traces
+are not representative. The original 60/40 utilization/throughput formula
+and 600 Kops/sec throughput cap are retained, so speed points are easy to
+max out on modern hardware. Compare utilization and raw Kops/sec locally;
+the score is not calibrated to the original grading machine. Native pointers
+and size_t are 8 bytes on ARM64; allocator metadata must account for that.
+
+Trace provenance is documented in traces/README.md.
+
