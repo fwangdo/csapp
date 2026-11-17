@@ -207,7 +207,30 @@ void transpose_submit_64(int M, int N, int A[N][M], int B[M][N]) {
   }
 }
 
-void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {}
+void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
+  // M -> 61, N -> 67
+  for (int i = 0; i < 60; i += 4) {
+    for (int j = 0; j < 60; j += 4) {
+      for (int di = 0; di < 4; di++) {
+        for (int dj = 0; dj < 4; dj++) {
+          B[j + dj][i + di] = A[i + di][j + dj];
+        }
+      }
+    }
+  }
+
+  for (int i = 60; i < N; i++) {
+    for (int j = 0; j < 60; j++) {
+      B[j][i] = A[i][j];
+    }
+  }
+
+  for (int i = 0; i < N; i++) {
+    for (int j = 60; j < M; j++) {
+      B[j][i] = A[i][j];
+    }
+  }
+}
 
 /*
  * You can define additional transpose functions below. We've defined
@@ -221,15 +244,11 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {}
 char trans_desc[] = "Simple row-wise scan transpose";
 void trans(int M, int N, int A[N][M], int B[M][N]) {
   // int i, j, tmp;
+  int i, j;
 
-  for (int i = 0; i < N; i += 4) {
-    for (int j = 0; j < M; j += 4) {
-      //
-      for (int di = 0; di < 4; di++) {
-        for (int dj = 0; dj < 4; dj++) {
-          B[j + dj][i + di] = A[i + di][j + dj];
-        }
-      }
+  for (i = 0; i < N; i++) {
+    for (j = 0; j < M; j++) {
+      B[j][i] = A[i][j];
     }
   }
 }
