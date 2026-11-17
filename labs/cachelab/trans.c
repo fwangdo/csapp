@@ -65,9 +65,7 @@ void transpose_submit_32(int M, int N, int A[N][M], int B[M][N]) {
   }
 }
 
-void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
-
-  //
+void transpose_submit_64(int M, int N, int A[N][M], int B[M][N]) {
   for (int j = 0; j < M; j += 8) {
     for (int i = 0; i < N - 8; i += 8) {
       //
@@ -208,6 +206,8 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
     }
   }
 }
+
+void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {}
 
 /*
  * You can define additional transpose functions below. We've defined
