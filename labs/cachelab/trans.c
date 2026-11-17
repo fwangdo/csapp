@@ -208,53 +208,44 @@ void transpose_submit_64(int M, int N, int A[N][M], int B[M][N]) {
 }
 
 void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
-  // M -> 61, N -> 67
-
-  // 56, 56
-  for (int i = 0; i < 56; i += 8) {
-    for (int j = 0; j < 56; j += 8) {
+  // N -> 67, M = 61.
+  // 64, 56
+  for (int i = 0; i < N - 8; i += 8) {
+    for (int j = 0; j < M - 8; j += 8) {
       for (int di = 0; di < 8; di++) {
         for (int dj = 0; dj < 8; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
         }
       }
+
     }
   }
 
-  // 64 56 
-  for (int i = 56; i < 64; i += 4) {
-    for (int j = 0; j < 56; j += 4) {
-      for (int di = 0; di < 4; di++) {
-        for (int dj = 0; dj < 4; dj++) {
-          B[j + dj][i + di] = A[i + di][j + dj];
-        }
+  // 67, 56
+  for (int j = 0; j < 56; j++) {
+    B[j][64] = A[64][j];
+    B[j][65] = A[65][j];
+    B[j][66] = A[66][j];
+  }
+
+  // 65, 61
+  int j = 56;
+  for (int i = 0; i < N - 5; i += 5) {
+    for (int di = 0; di < 5; di++) {
+      for (int dj = 0; dj < 5; dj++) {
+        B[j + dj][i + di] = A[i + di][j + dj];
       }
     }
   }
 
 
-  // 64 by 60 
-  for (int i = 0; i < 64; i += 4) {
-    for (int j = 56; j < 60; j += 4) {
-      for (int di = 0; di < 4; di++) {
-        for (int dj = 0; dj < 4; dj++) {
-          B[j + dj][i + di] = A[i + di][j + dj];
-        }
-      }
-    }
-  }
-
-  // 64 by 61. 
-  for (int i = 0; i < 64; i++) {
-      B[60][i] = A[i][60];
-  }
-
-  // 
-  for (int i = 64; i < 67; i++) {
-    for (int j = 0; j < 61; j++) {
+  for (int i = 65; i < N; i++) {
+    for (int j = 56; j < M; j ++) {
       B[j][i] = A[i][j];
     }
   }
+
+
 }
 
 /*
@@ -268,14 +259,22 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
  */
 char trans_desc[] = "Simple row-wise scan transpose";
 void trans(int M, int N, int A[N][M], int B[M][N]) {
-  // int i, j, tmp;
-  int i, j;
-
-  for (i = 0; i < N; i++) {
-    for (j = 0; j < M; j++) {
-      B[j][i] = A[i][j];
+  for (int i = 0; i < N - 4; i += 4) {
+    for (int j = 0; j < M - 4; j += 4) {
+      for (int di = 0; di < 4; di++) {
+        for (int dj = 0; dj < 4; dj++) {
+          B[j + dj][i + di] = A[i + di][j + dj];
+        }
+      }
     }
   }
+
+  // int i, j;
+  // for (i = 0; i < N; i++) {
+    // for (j = 0; j < M; j++) {
+      // B[j][i] = A[i][j];
+    // }
+  // }
 }
 
 /*
