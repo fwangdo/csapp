@@ -209,7 +209,7 @@ void transpose_submit_64(int M, int N, int A[N][M], int B[M][N]) {
 
 void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
   // N -> 67, M = 61.
-  // 64, 56
+  // 64, 61 
   for (int i = 0; i < N - 8; i += 8) {
     for (int j = 0; j < M - 8; j += 8) {
       for (int di = 0; di < 8; di++) {
@@ -217,35 +217,26 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
           B[j + dj][i + di] = A[i + di][j + dj];
         }
       }
+    }
 
+    for (int j = 56; j < M; j++) {
+        B[j][i] = A[i][j];
+        B[j][i+1] = A[i+1][j];
+        B[j][i+2] = A[i+2][j];
+        B[j][i+3] = A[i+3][j];
+        B[j][i+4] = A[i+4][j];
+        B[j][i+5] = A[i+5][j];
+        B[j][i+6] = A[i+6][j];
+        B[j][i+7] = A[i+7][j];
     }
   }
 
-  // 67, 56
-  for (int j = 0; j < 56; j++) {
+  // 67, 61 
+  for (int j = 0; j < 61; j++) {
     B[j][64] = A[64][j];
     B[j][65] = A[65][j];
     B[j][66] = A[66][j];
   }
-
-  // 65, 61
-  int j = 56;
-  for (int i = 0; i < N - 5; i += 5) {
-    for (int di = 0; di < 5; di++) {
-      for (int dj = 0; dj < 5; dj++) {
-        B[j + dj][i + di] = A[i + di][j + dj];
-      }
-    }
-  }
-
-
-  for (int i = 65; i < N; i++) {
-    for (int j = 56; j < M; j ++) {
-      B[j][i] = A[i][j];
-    }
-  }
-
-
 }
 
 /*
@@ -259,22 +250,16 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
  */
 char trans_desc[] = "Simple row-wise scan transpose";
 void trans(int M, int N, int A[N][M], int B[M][N]) {
-  for (int i = 0; i < N - 4; i += 4) {
-    for (int j = 0; j < M - 4; j += 4) {
-      for (int di = 0; di < 4; di++) {
-        for (int dj = 0; dj < 4; dj++) {
+  for (int i = 0; i < N - 6; i += 6) {
+    for (int j = 0; j < M - 6; j += 6) {
+      for (int di = 0; di < 6; di++) {
+        for (int dj = 0; dj < 6; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
         }
       }
     }
   }
-
-  // int i, j;
-  // for (i = 0; i < N; i++) {
-    // for (j = 0; j < M; j++) {
-      // B[j][i] = A[i][j];
-    // }
-  // }
+  
 }
 
 /*
