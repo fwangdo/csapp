@@ -209,25 +209,25 @@ void transpose_submit_64(int M, int N, int A[N][M], int B[M][N]) {
 
 void transpose_submit(int M, int N, int A[N][M], int B[M][N]) {
   // N -> 67, M = 61.
-  // 64, 61
-  for (int i = 0; i < N - 8; i += 8) {
-    for (int j = 0; j < M - 8; j += 8) {
+  // 64, 56 
+  for (int j = 0; j < M - 8; j += 8) {
+    for (int i = 0; i < N - 8; i += 8) {
       for (int di = 0; di < 8; di++) {
         for (int dj = 0; dj < 8; dj++) {
           B[j + dj][i + di] = A[i + di][j + dj];
         }
       }
-    }
 
-    for (int j = 56; j < M; j++) {
-      B[j][i] = A[i][j];
-      B[j][i + 1] = A[i + 1][j];
-      B[j][i + 2] = A[i + 2][j];
-      B[j][i + 3] = A[i + 3][j];
-      B[j][i + 4] = A[i + 4][j];
-      B[j][i + 5] = A[i + 5][j];
-      B[j][i + 6] = A[i + 6][j];
-      B[j][i + 7] = A[i + 7][j];
+      if (j == 48)
+      {
+        for (int di = 0; di < 8; di++) {
+          B[56][i + di] = A[i + di][56];
+          B[57][i + di] = A[i + di][57];
+          B[58][i + di] = A[i + di][58];
+          B[59][i + di] = A[i + di][59];
+          B[60][i + di] = A[i + di][60];
+        }
+      }
     }
   }
 
