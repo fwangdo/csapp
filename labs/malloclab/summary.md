@@ -79,3 +79,6 @@
   - 그럼 "이전 블록"과 병합하려면? 알 수가 없다. 처음부터 다시 돌아보는 수밖에 없음. 선형 시간이 걸리는 단점이 있음.
 - 해결방법? footer(=boundary tags)두기. 이전 블록을 보고 싶다? 현재블록의 헤더에서 a word 앞이 footer이므로 그곳의 정보를 파악하면 됨.
   - footer는 기본적으로 header의 복제본(replica)임.
+- Q. 그렇게 footer 쓰면 payload 크기에 타격이 가는 것 아닌가?
+  - A. no, clever optimization이 있음. 핵심은 free에만 footer가 존재하면 된다는 것. 그럼 allocated block 뒤의 free는 어떻게 아나?
+  - header에서 남는 비트 중 하나로 이전 블록의 allocated 여부를 표현. free면 footer 보고 아니면 불가능.
