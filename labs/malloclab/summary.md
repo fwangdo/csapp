@@ -82,3 +82,8 @@
 - Q. 그렇게 footer 쓰면 payload 크기에 타격이 가는 것 아닌가?
   - A. no, clever optimization이 있음. 핵심은 free에만 footer가 존재하면 된다는 것. 그럼 allocated block 뒤의 free는 어떻게 아나?
   - header에서 남는 비트 중 하나로 이전 블록의 allocated 여부를 표현. free면 footer 보고 아니면 불가능.
+
+### 9.12 실제로 구현하기
+
+- 시작과 끝을 파악하기 위한 배치, 프롤로그 블록과 에필로그 블록.
+  - 첫 번째 배치. 1 word padding을 앞에 두고 header와 footer로만 구성된 프롤로그 블록을 앞에 배치. 뒤에는 에필로그 블록을 둠. 이건 헤더로만 구성.
